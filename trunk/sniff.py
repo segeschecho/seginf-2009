@@ -168,9 +168,8 @@ class HTTPAssembler(object):
             # y lo persisto
             self.persistidor.persistirRequest(cuadrupla,r)
 
-        except Exception, e:
+        except:
             #No pude armar el request todavia
-            print e
             pass
         
     #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
@@ -200,13 +199,30 @@ class HTTPAssembler(object):
         portDestino = pktTCP.dport
         return (ipOrigen,ipDestino,portOrigen,portDestino)
             
+# Clase que permite hacer un archivo.cap para poder mirarlo por ejemplo con el
+# wireshark
+class CapDumper(object):
+    def __init__(self,file='dump.cap'):
+        self.file = file
+        self.list = PacketList()
     
+    def nuevoPaquete(self,pkt):
+        self.list.append(pkt)
+        
+    def dumpear(self):
+        if len(self.list) > 0:
+            wrpcap(self.file, self.list)
+        else:
+            print "No se capturaron paquetes"
 
 hs = HTTPandHTTPSSniffer()
 ha = HTTPAssembler()
+ca = CapDumper('captura.cap')
 hs.addCallback(ha.nuevo_paquete)
+hs.addCallback(ca.nuevoPaquete)
 hs.sniffear()
-s1 = get_session()
+ca.dumpear()
+
 
 
 

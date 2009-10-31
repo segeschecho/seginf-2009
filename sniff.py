@@ -56,7 +56,7 @@ class HTTPAssembler(object):
     
         
     def nuevo_paquete(self,pkt):
-        
+        print "mensaje"
         #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
         if self.ultimoPaquete == pkt:
             return
@@ -118,10 +118,10 @@ class HTTPAssembler(object):
         f = cStringIO.StringIO(buf)
         line = f.readline()
         l = line.strip().split(None, 2)
-        if len(l) < 2 or not l[0].startswith(self.__proto) or not l[1].isdigit():
+        if len(l) < 2 or not l[0].startswith(self._proto) or not l[1].isdigit():
             return False
         else:
-            True
+            return True
         
     def request(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)

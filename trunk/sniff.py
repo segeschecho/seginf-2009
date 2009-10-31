@@ -7,6 +7,10 @@ from persistencia import get_session, RequestHTTP, ResponseHTTP
 import sys
 import cStringIO
 
+STANDARD_PORT = 8080
+
+# Clase base de sniffer
+# Permite agregarle callbacks para que se llamen cada vez que llegue un paquete
 class Sniffer(object):
     def __init__(self):
         self.callbacks=[]
@@ -21,8 +25,9 @@ class Sniffer(object):
         for each in self.callbacks:
             each(pkt)
             
+# Clase que permite sniffear trafico tcp al puerto donde atiende el proxy
 class HTTPandHTTPSSniffer(Sniffer):
-    def __init__(self,port=8080):
+    def __init__(self,port=STANDARD_PORT):
         self.callbacks=[]
         self.port = port
         
@@ -31,9 +36,34 @@ class HTTPandHTTPSSniffer(Sniffer):
             sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port))
         else:
             sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port), count = count)
+
+#Clase que guarda las response y request que vamos capturando en una base de datos
+class PersistidorHTTP(object):
+    
+    def persistirResponse(self,cuadrupla, mensaje):
+        self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,mensaje.status,mensaje.reason)
         
+    
+    def persistirRequest(self,cuadrupla, mensaje):
+        self.persistirMensaje(cuadrupla,mensaje,RequestHTTP,mensaje.method,mensaje.uri)
+        
+    
+    def persistirMensaje(self,cuadrupla, mensaje, clase, arg0,arg1):
+        try:
+            s = get_session()
+            ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
+            s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino,
+                              mensaje.headers,mensaje.body, arg0,arg1))
+            s.commit()
+        except Exception, e:
+            print e
+            sys.exit(-1)
+            
+
+#Clase que toma los mensajes que llegan y va armando los mensajes HTTP         
 class HTTPAssembler(object):
     
+    #Metodos posibles para un request
     _methods = dict.fromkeys((
         'GET', 'PUT', 'ICY',
         'COPY', 'HEAD', 'LOCK', 'MOVE', 'POLL', 'POST',
@@ -47,63 +77,61 @@ class HTTPAssembler(object):
         'VERSION-CONTROL',
         'BASELINE-CONTROL'
         ))
+    
+    #Nombre del protcolo que aparece en los mensajes
     _proto = 'HTTP'
     
-    def __init__(self,port=8080):
+    def __init__(self,port=STANDARD_PORT):
+        # port -> Puerto del proxy al que le vamos a prestar atencion
         self.port = port
+        # Diccionario de cuadruplas (ipOrigen,ipDestino,portOrigen,portDestino)
+        # en fragmentos de mensajes HTTP
         self.paquetes={}
+        # Diccionario de cuadruplas en numeros de secuencia, es para no appendear
+        # a los mensajes contenido de retrasmisiones
+        self.secuencias ={}
+        # HACK: esta variable la usamos por si corremos el sniffer en la misma
+        # maquina que el proxy y scappy se vuelve loco
         self.ultimoPaquete = None
-    
+        
+        self.persistidor = PersistidorHTTP()
         
     def nuevo_paquete(self,pkt):
-        print "mensaje"
+        
         #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
         if self.ultimoPaquete == pkt:
             return
         self.ultimoPaquete = pkt
         
-        #chequeo que el paquete no sea solo de padding o tcp vacio
+        # chequeo que el paquete no sea solo de padding o tcp vacio
+        # Si tiene contenido tiene capa Raw
         if not pkt.lastlayer().haslayer(Raw):
             return
+        
+        # Chequeamos que el paquete sea desde o hacia el proxy, sino lo ignoramos
         pktTCP = pkt.getlayer(TCP)
         portOrigen = pktTCP.sport
         portDestino = pktTCP.dport
         if not(portOrigen == self.port or portDestino == self.port):
             return
+        #Si viene del proxy es un response (potencialmente), sino es un request
         if portOrigen == self.port:
             self.response(pkt)
         else:
             self.request(pkt)
     
-    def _persistirResponse(self,cuadrupla, mensaje):
-        try:
-            s = get_session()
-            ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
-            s.add(ResponseHTTP(ipOrigen, ipDestino, portOrigen, portDestino,
-                              mensaje.headers,mensaje.body, mensaje.status,mensaje.reason))
-            s.commit()
-        except Exception, e:
-            print e
-            sys.exit(-1) 
-    
-    def _persistirRequest(self,cuadrupla, mensaje):
-        try:
-            s = get_session()
-            ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
-            s.add(RequestHTTP(ipOrigen, ipDestino, portOrigen, portDestino,
-                              mensaje.headers,mensaje.body, mensaje.method,mensaje.uri))
-            s.commit()
-        except Exception, e:
-            print e
-            sys.exit(-1)     
-    
     def _agregarPaquete(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
         if cuadrupla in self.paquetes:
+            if pkt.getlayer(TCP).seq in self.secuencias[cuadrupla]:
+                return
             self.paquetes[cuadrupla]+=pkt.getlayer(Raw).load
+            self.secuencias[cuadrupla].append(pkt.getlayer(TCP).seq)
         else:
             self.paquetes[cuadrupla]=pkt.getlayer(Raw).load
-        
+            self.secuencias[cuadrupla] = [pkt.getlayer(TCP).seq]
+
+    #Cheque que un paquete pueda ser el comienzo de un request
     def _comienzoDeRequest(self,buf):
         f = cStringIO.StringIO(buf)
         line = f.readline()
@@ -113,7 +141,8 @@ class HTTPAssembler(object):
             return False
         else:
             return True
-    
+        
+    #Chequea que un paquete pueda ser el comienzo de una response
     def _comienzoDeResponse(self,buf):
         f = cStringIO.StringIO(buf)
         line = f.readline()
@@ -122,21 +151,34 @@ class HTTPAssembler(object):
             return False
         else:
             return True
-        
+
+    #Metodo para atender paquetes que son potenciales request        
     def request(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
+        #Si no tenemos la cuadrupla ya guardada, entonces tiene q iniciarse una request
         if not cuadrupla in self.paquetes and not self._comienzoDeRequest(pkt.getlayer(Raw).load):
             return
+        #Agrego el fragmento que llego
         self._agregarPaquete(pkt)
         try:
+            #Intento armar una request
             r = Request(self.paquetes[cuadrupla])
-            del self.paquetes[cuadrupla]
-            self._persistirRequest(cuadrupla,r)
+            #Si pude, borro los fragmentos
+            self._borrarCuadrupla(cuadrupla)
+            # y lo persisto
+            self.persistidor.persistirRequest(cuadrupla,r)
 
-        except:
+        except Exception, e:
+            #No pude armar el request todavia
+            print e
             pass
         
-        
+    #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
+    def _borrarCuadrupla(self, cuadrupla):
+        del self.paquetes[cuadrupla]
+        del self.secuencias[cuadrupla]  
+    
+    #Metodo para atender potenciales responses (similar al de las requests)
     def response(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
         if not cuadrupla in self.paquetes and not self._comienzoDeResponse(pkt.getlayer(Raw).load):
@@ -144,8 +186,8 @@ class HTTPAssembler(object):
         self._agregarPaquete(pkt)
         try:
             r = Response(self.paquetes[cuadrupla])
-            del self.paquetes[cuadrupla]
-            self._persistirResponse(cuadrupla,r)
+            self._borrarCuadrupla(cuadrupla)
+            self.persistidor.persistirResponse(cuadrupla,r)
         except:
             pass
             
@@ -164,7 +206,8 @@ hs = HTTPandHTTPSSniffer()
 ha = HTTPAssembler()
 hs.addCallback(ha.nuevo_paquete)
 hs.sniffear()
-print ha.paquetes
+s1 = get_session()
+
 
 
     

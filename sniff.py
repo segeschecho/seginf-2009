@@ -5,6 +5,7 @@ from dpkt.http import Request, Response
 
 from persistencia import get_session, RequestHTTP, ResponseHTTP
 import sys
+import cStringIO
 
 class Sniffer(object):
     def __init__(self):
@@ -21,27 +22,46 @@ class Sniffer(object):
             each(pkt)
             
 class HTTPandHTTPSSniffer(Sniffer):
-    def __init__(self,portHTTP=80,portHTTPS=443):
+    def __init__(self,port=8080):
         self.callbacks=[]
-        self.portHTTP = portHTTP
-        self.portHTTPS = portHTTPS
+        self.port = port
         
     def sniffear(self,count = None):
         if count == None:
-            sniff(prn=self.callCallbacks, filter='tcp port %s or port %s'%(self.portHTTP,self.portHTTPS))
+            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port))
         else:
-            sniff(prn=self.callCallbacks, filter='tcp port %s or port %s'%(self.portHTTP,self.portHTTPS), count = count)
+            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port), count = count)
         
 class HTTPAssembler(object):
-    def __init__(self,port=80):
+    
+    _methods = dict.fromkeys((
+        'GET', 'PUT', 'ICY',
+        'COPY', 'HEAD', 'LOCK', 'MOVE', 'POLL', 'POST',
+        'BCOPY', 'BMOVE', 'MKCOL', 'TRACE', 'LABEL', 'MERGE',
+        'DELETE', 'SEARCH', 'UNLOCK', 'REPORT', 'UPDATE', 'NOTIFY',
+        'BDELETE', 'CONNECT', 'OPTIONS', 'CHECKIN',
+        'PROPFIND', 'CHECKOUT', 'CCM_POST',
+        'SUBSCRIBE', 'PROPPATCH', 'BPROPFIND',
+        'BPROPPATCH', 'UNCHECKOUT', 'MKACTIVITY',
+        'MKWORKSPACE', 'UNSUBSCRIBE', 'RPC_CONNECT',
+        'VERSION-CONTROL',
+        'BASELINE-CONTROL'
+        ))
+    _proto = 'HTTP'
+    
+    def __init__(self,port=8080):
         self.port = port
         self.paquetes={}
+        self.ultimoPaquete = None
     
-    def _request_methods(self):
-        return
-        set(Request._methods)
         
     def nuevo_paquete(self,pkt):
+        
+        #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
+        if self.ultimoPaquete == pkt:
+            return
+        self.ultimoPaquete = pkt
+        
         #chequeo que el paquete no sea solo de padding o tcp vacio
         if not pkt.lastlayer().haslayer(Raw):
             return
@@ -59,7 +79,6 @@ class HTTPAssembler(object):
         try:
             s = get_session()
             ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
-            tipo =  'Response' if isinstance(mensaje,Response) else 'Request'
             s.add(ResponseHTTP(ipOrigen, ipDestino, portOrigen, portDestino,
                               mensaje.headers,mensaje.body, mensaje.status,mensaje.reason))
             s.commit()
@@ -85,8 +104,29 @@ class HTTPAssembler(object):
         else:
             self.paquetes[cuadrupla]=pkt.getlayer(Raw).load
         
+    def _comienzoDeRequest(self,buf):
+        f = cStringIO.StringIO(buf)
+        line = f.readline()
+        l = line.strip().split()
+        if len(l) != 3 or l[0] not in self._methods or \
+           not l[2].startswith(self._proto):
+            return False
+        else:
+            return True
+    
+    def _comienzoDeResponse(self,buf):
+        f = cStringIO.StringIO(buf)
+        line = f.readline()
+        l = line.strip().split(None, 2)
+        if len(l) < 2 or not l[0].startswith(self.__proto) or not l[1].isdigit():
+            return False
+        else:
+            True
+        
     def request(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
+        if not cuadrupla in self.paquetes and not self._comienzoDeRequest(pkt.getlayer(Raw).load):
+            return
         self._agregarPaquete(pkt)
         try:
             r = Request(self.paquetes[cuadrupla])
@@ -99,6 +139,8 @@ class HTTPAssembler(object):
         
     def response(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
+        if not cuadrupla in self.paquetes and not self._comienzoDeResponse(pkt.getlayer(Raw).load):
+            return
         self._agregarPaquete(pkt)
         try:
             r = Response(self.paquetes[cuadrupla])
@@ -121,7 +163,8 @@ class HTTPAssembler(object):
 hs = HTTPandHTTPSSniffer()
 ha = HTTPAssembler()
 hs.addCallback(ha.nuevo_paquete)
-hs.sniffear(count=100)
+hs.sniffear()
+print ha.paquetes
 
 
     

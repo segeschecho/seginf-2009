@@ -8,6 +8,7 @@ import sys
 import cStringIO
 
 STANDARD_PORT = 8080
+DEFAULT_CAP ='captura.cap'
 
 # Clase base de sniffer
 # Permite agregarle callbacks para que se llamen cada vez que llegue un paquete
@@ -215,13 +216,48 @@ class CapDumper(object):
         else:
             print "No se capturaron paquetes"
 
-hs = HTTPandHTTPSSniffer()
-ha = HTTPAssembler()
-ca = CapDumper('captura.cap')
+class VerbosePacketHandler(object):
+    def nuevoPaquete(self,pkt):
+        print pkt.summary()
+
+
+
+from optparse import OptionParser
+usage = "%prog [opciones]"
+parser = OptionParser(usage=usage)
+
+parser.add_option("-p", "--port", dest="proxy_port", default=STANDARD_PORT,
+                  help="Puerto donde atiende el proxy", metavar="PORT")
+parser.add_option("-d", "--dump", dest="dump_file",
+                  help="Generar un archivo con las capturas", metavar="DUMP")
+parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true",
+                  help="mostrar informacion adicional")
+
+
+
+########
+# Main #
+########
+
+(options, args) = parser.parse_args()
+
+puerto = int(options.proxy_port)
+hs = HTTPandHTTPSSniffer(port=puerto)
+ha = HTTPAssembler(port=puerto)
 hs.addCallback(ha.nuevo_paquete)
-hs.addCallback(ca.nuevoPaquete)
+
+if options.dump_file:
+    ca = CapDumper(options.dump_file)
+    hs.addCallback(ca.nuevoPaquete)
+
+if options.verbose:
+    vph = VerbosePacketHandler()
+    hs.addCallback(vph.nuevoPaquete)
+    
 hs.sniffear()
-ca.dumpear()
+
+if "ca" in locals():
+    ca.dumpear()
 
 
 

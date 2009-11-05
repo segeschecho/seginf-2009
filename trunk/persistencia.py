@@ -25,21 +25,23 @@ class MensajeHTTP(Base):
     version = Column(String)
     headers = Column(PickleType(pickler=json))
     body = Column(PickleType)
+    datetime = Column(DateTime)
 
 
-
-    def __init__(self, ipOrigen, ipDestino, portOrigen, portDestino,headers,body):
+    def __init__(self, ipOrigen, ipDestino, portOrigen, portDestino,version,headers,body,datetime):
         self.ipOrigen = ipOrigen
         self.ipDestino = ipDestino
         self.portOrigen = portOrigen
         self.portDestino = portDestino
+        self.version = version
         self.headers = headers
         self.body = body
+        self.datetime = datetime
         
 
 
     def __repr__(self):
-        return "<id:%s headers: from:%s %s to:%s %s>" % (self.id,
+        return "<id:%s headers:%s from:%s %s to:%s %s>" % (self.id,
                                                      self.headers, 
                                                      self.ipOrigen, self.portOrigen,
                                                      self.ipDestino, self.portDestino)
@@ -51,8 +53,10 @@ class RequestHTTP(MensajeHTTP):
     method = Column(String)
     uri = Column(String)
     
-    def __init__(self,ipOrigen, ipDestino, portOrigen, portDestino,headers,body, method, uri):
-        super(RequestHTTP,self).__init__(ipOrigen, ipDestino, portOrigen, portDestino,headers,body)
+    def __init__(self,ipOrigen, ipDestino, portOrigen, portDestino, version,
+                 headers,body, datetime,method, uri):
+        super(RequestHTTP,self).__init__(ipOrigen, ipDestino, portOrigen,
+                                         portDestino,version, headers,body,datetime)
         self.uri = uri
         self.method = method
         
@@ -63,8 +67,10 @@ class ResponseHTTP(MensajeHTTP):
     status = Column(String)
     razon = Column(String)
     
-    def __init__(self,ipOrigen, ipDestino, portOrigen, portDestino,headers,body, status, razon):
-        super(ResponseHTTP,self).__init__(ipOrigen, ipDestino, portOrigen, portDestino,headers,body)
+    def __init__(self,ipOrigen, ipDestino, portOrigen, portDestino, version,
+                 headers,body, datetime,status, razon):
+        super(ResponseHTTP,self).__init__(ipOrigen, ipDestino, portOrigen,
+                                          portDestino,version ,headers,body,datetime)
         self.status = status
         self.razon = razon
         

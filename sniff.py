@@ -6,6 +6,7 @@ from dpkt.http import Request, Response
 from persistencia import get_session, RequestHTTP, ResponseHTTP
 import sys
 import cStringIO
+import datetime
 
 STANDARD_PORT = 8080
 DEFAULT_CAP ='captura.cap'
@@ -41,26 +42,27 @@ class HTTPandHTTPSSniffer(Sniffer):
 #Clase que guarda las response y request que vamos capturando en una base de datos
 class PersistidorHTTP(object):
     
-    def persistirResponse(self,cuadrupla, mensaje):
-        self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,mensaje.status,mensaje.reason)
+    def persistirResponse(self,cuadrupla, mensaje,timestamp):
+        self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,timestamp,mensaje.status,mensaje.reason)
         
     
-    def persistirRequest(self,cuadrupla, mensaje):
-        self.persistirMensaje(cuadrupla,mensaje,RequestHTTP,mensaje.method,mensaje.uri)
+    def persistirRequest(self,cuadrupla, mensaje, timestamp):
+        self.persistirMensaje(cuadrupla,mensaje,RequestHTTP,timestamp,mensaje.method,mensaje.uri)
         
     
-    def persistirMensaje(self,cuadrupla, mensaje, clase, arg0,arg1):
+    def persistirMensaje(self,cuadrupla, mensaje, clase, timestamp,arg0,arg1):
         try:
             s = get_session()
             ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
-            s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino,
-                              mensaje.headers,mensaje.body, arg0,arg1))
+            s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
+                              mensaje.headers,mensaje.body, timestamp,arg0,arg1))
             s.commit()
         except Exception, e:
             print e
             sys.exit(-1)
             
 
+#TODO: refactor de esta clase, cambiar los diccionarios por clases para "conexiones"
 #Clase que toma los mensajes que llegan y va armando los mensajes HTTP         
 class HTTPAssembler(object):
     
@@ -81,7 +83,7 @@ class HTTPAssembler(object):
     
     #Nombre del protcolo que aparece en los mensajes
     _proto = 'HTTP'
-    
+
     def __init__(self,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
         self.port = port
@@ -94,6 +96,8 @@ class HTTPAssembler(object):
         # HACK: esta variable la usamos por si corremos el sniffer en la misma
         # maquina que el proxy y scappy se vuelve loco
         self.ultimoPaquete = None
+        
+        self.datetimes = {}
         
         self.persistidor = PersistidorHTTP()
         
@@ -131,6 +135,7 @@ class HTTPAssembler(object):
         else:
             self.paquetes[cuadrupla]=pkt.getlayer(Raw).load
             self.secuencias[cuadrupla] = [pkt.getlayer(TCP).seq]
+            self.datetimes[cuadrupla] = datetime.datetime.now()
 
     #Cheque que un paquete pueda ser el comienzo de un request
     def _comienzoDeRequest(self,buf):
@@ -164,10 +169,11 @@ class HTTPAssembler(object):
         try:
             #Intento armar una request
             r = Request(self.paquetes[cuadrupla])
+            timestamp = self.datetimes[cuadrupla]
             #Si pude, borro los fragmentos
             self._borrarCuadrupla(cuadrupla)
             # y lo persisto
-            self.persistidor.persistirRequest(cuadrupla,r)
+            self.persistidor.persistirRequest(cuadrupla,r,timestamp)
 
         except:
             #No pude armar el request todavia
@@ -176,7 +182,8 @@ class HTTPAssembler(object):
     #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
     def _borrarCuadrupla(self, cuadrupla):
         del self.paquetes[cuadrupla]
-        del self.secuencias[cuadrupla]  
+        del self.secuencias[cuadrupla]
+        del self.datetimes[cuadrupla]
     
     #Metodo para atender potenciales responses (similar al de las requests)
     def response(self,pkt):
@@ -186,8 +193,9 @@ class HTTPAssembler(object):
         self._agregarPaquete(pkt)
         try:
             r = Response(self.paquetes[cuadrupla])
+            timestamp = self.datetimes[cuadrupla]
             self._borrarCuadrupla(cuadrupla)
-            self.persistidor.persistirResponse(cuadrupla,r)
+            self.persistidor.persistirResponse(cuadrupla,r,timestamp)
         except:
             pass
             
@@ -256,7 +264,7 @@ if options.verbose:
     
 hs.sniffear()
 
-if "ca" in locals():
+if options.dump_file:
     ca.dumpear()
 
 

@@ -63,5 +63,9 @@ class FueraDeHorario(Reporte):
             for each in infractores:
                 res +="\\item %s %s\n"%(each.ipOrigen, each.datetime)
             res += "\\end{itemize}\n"
-            return res    
-            
+            return res
+        
+#variables necesarias para poder importar el modulo 
+reporte = FueraDeHorario()
+nombre = "Fuera de horario"
+descripcion = "Informa el uso de internet fuera de los horarios establecidos"

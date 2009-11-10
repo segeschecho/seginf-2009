@@ -4,21 +4,22 @@ Como armar el entorno:
         > sudo apt-get install python-setuptools python-dev build-essential
     3. Instalar scapy:
         > sudo easy_install scapy
-        (Si esto falla, bajar scapy de synaptic, pero es una version vieja)
+        (Si esto falla, bajar scapy de synaptic, minimo la version 2)
     4. Instalar sqlAlchemy:
         > sudo easy_install sqlalchemy
     5. Instalar dpkt:
-        bajar http://dpkt.googlecode.com/files/dpkt-1.6.tar.gz
-        descomprimir
-        En la carpeta dpkt, buscar bgp.py
-        en ese archivo comentar con #
-        las lineas:
-            678             #self.failUnless(c.as == 65215)
-            715             #self.failUnless(b4.open.as == 237)
-        fuera de la carpeta dpkt hay un archivo setup.py, abrir una consola
+        extraerlo, pararse en el directorio
         > sudo python setup.py install
-    6. bajar el tp
-    7. Ahora todo deberia andar, sin embargo parece haber un bugcito en scapy
-        que consiste en la falta de un import, lo cual hace que se rompa todo,
-        si esto le pasa a alguien mas, me avisa asi vemos como se arregla
-
+    7. Ahora todo deberia andar, sin embargo parece haber un bugcito en 
+        algunas versiones viejas descapy que consiste en la falta de un 
+        import, lo cual hace que se rompa todo, si pasa esto avisme
+    8. Crear las tablas:
+        > python persistencia.py
+        
+    9. Correr el sniffer:
+        > sudo python sniff.py
+        para obtener ayuda:
+        > python sniff.py -h
+        para pararlo: ctrl+c
+        
+        

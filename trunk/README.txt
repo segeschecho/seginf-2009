@@ -5,6 +5,9 @@ Como armar el entorno:
     3. Instalar scapy:
         > sudo easy_install scapy
         (Si esto falla, bajar scapy de synaptic, minimo la version 2)
+
+	----> Creo q es mejor seguir estas instrucciones: http://www.secdev.org/projects/scapy/doc/installation.html  (la parte de Marcurial)
+	tanto en los repos de Debian como en los de Ubuntu esta la version vieja. Esto es una boludez y baja la ultima version en desarrollo.
     4. Instalar sqlAlchemy:
         > sudo easy_install sqlalchemy
     5. Instalar dpkt:

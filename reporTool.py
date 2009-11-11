@@ -37,15 +37,14 @@ class Error(HasTraits):
     mensaje=Str("Error")
     view = View(Item('mensaje',style='readonly',show_label=False), title="ERROR", buttons=['OK'])
 
-class FileChooser(HasTraits):
-    f = File
-    view = View('f',buttons=['OK'],title='importar reporte')
+
     
 class Ventana(HasTraits):
     desde = Date(date.today())
     hasta = Date(date.today())
     scripts = List(Configurador)
     generarReporte = Button(label='Generar')
+    salida = File('fede.pdf')
     
     
     def _generarReporte_fired(self):
@@ -65,8 +64,12 @@ class Ventana(HasTraits):
                 progress.update(i)
                 i +=1
                 
-        
-        f = open('fede.pdf','w')
+        fe = open('fede.tex','w')
+        fe.write(unicode(documento%res))
+        fe.close()
+        if self.salida[-4:] != '.pdf':
+            self.salida = self.salida + '.pdf'
+        f = open(self.salida,'w')
         f.write(convert(unicode(documento%res), 'latex', 'pdf'))
         f.close()
         progress.update(len(seleccionados)+1)
@@ -91,7 +94,7 @@ class Ventana(HasTraits):
                     del lista[each]
         return
         
-    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ),
+    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), Item('salida', editor=FileEditor(), style='text'),
             Item('scripts',editor=ListEditor(style='custom'),resizable=True,show_label=False),
             Item('generarReporte'),
             resizable=True,
@@ -103,7 +106,7 @@ f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
 c1 = Configurador(script = f,nombre="Fuera de horario1", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
 
-v = Ventana(scripts=[c,c1])
+v = Ventana(scripts=[c,c1],desde = date(2000,1,1))
 
 v.configure_traits()
 

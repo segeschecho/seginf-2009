@@ -3,7 +3,7 @@
 from scapy.all import *
 from dpkt.http import Request, Response
 
-from persistencia import get_session, RequestHTTP, ResponseHTTP
+from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Conversacion
 import sys
 import cStringIO
 import datetime
@@ -41,6 +41,9 @@ class HTTPandHTTPSSniffer(Sniffer):
 
 #Clase que guarda las response y request que vamos capturando en una base de datos
 class PersistidorHTTP(object):
+    def __init__(self):
+        s = get_session()
+        self.ultimoId = s.query(MensajeHTTP).count()
     
     def persistirResponse(self,cuadrupla, mensaje,timestamp):
         self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,timestamp,mensaje.status,mensaje.reason)
@@ -56,6 +59,17 @@ class PersistidorHTTP(object):
             ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
             s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
                               mensaje.headers,mensaje.body, timestamp,arg0,arg1))
+            s.commit()
+            self.ultimoId +=1
+        except Exception, e:
+            print e
+            sys.exit(-1)
+            
+    def persistirConversacion(self,req,resp,timestamp):
+        try:
+            s = get_session()
+            
+            s.add(Conversacion(req,resp,timestamp))
             s.commit()
         except Exception, e:
             print e
@@ -100,6 +114,8 @@ class HTTPAssembler(object):
         self.datetimes = {}
         
         self.persistidor = PersistidorHTTP()
+        
+        self.requestSinResponses = {}
         
     def nuevo_paquete(self,pkt):
         
@@ -174,6 +190,7 @@ class HTTPAssembler(object):
             self._borrarCuadrupla(cuadrupla)
             # y lo persisto
             self.persistidor.persistirRequest(cuadrupla,r,timestamp)
+            self.requestSinResponses[cuadrupla] = self.persistidor.ultimoId
 
         except:
             #No pude armar el request todavia
@@ -196,6 +213,11 @@ class HTTPAssembler(object):
             timestamp = self.datetimes[cuadrupla]
             self._borrarCuadrupla(cuadrupla)
             self.persistidor.persistirResponse(cuadrupla,r,timestamp)
+            (ipDestino, ipOrigen, portDestino, portOrigen) = cuadrupla
+            cuadruplaRequest = (ipOrigen, ipDestino, portOrigen, portDestino)
+            if cuadruplaRequest in self.requestSinResponses:
+                self.persistidor.persistirConversacion(self.requestSinResponses[cuadruplaRequest],self.persistidor.ultimoId,timestamp)
+                del self.requestSinResponses[cuadruplaRequest]
         except:
             pass
             

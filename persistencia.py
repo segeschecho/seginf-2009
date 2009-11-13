@@ -45,7 +45,20 @@ class MensajeHTTP(Base):
                                                      self.headers, 
                                                      self.ipOrigen, self.portOrigen,
                                                      self.ipDestino, self.portDestino)
-                                                     
+
+# Esto probablemente era mejor como una one to one dentro de request, pero asi
+# es posible insertar la request y luego linkear con la response
+class Conversacion(Base):
+    __tablename__ = 'conversaciones'
+    id_request = Column(Integer, ForeignKey('requests.id'), primary_key=True)
+    id_reponse = Column(Integer, ForeignKey('responses.id'), primary_key=True)
+    datetime = Column(DateTime)
+    
+    def __init__(self, request, response, datetime):
+        self.id_response = response
+        self.id_request = request
+        self.datetime = datetime
+    
 class RequestHTTP(MensajeHTTP):
     __tablename__ = 'requests'
     __mapper_args__ = {'polymorphic_identity': 'requests'}

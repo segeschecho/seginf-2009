@@ -12,6 +12,7 @@ from templates import documento
 from tex import convert
 from reporte import Reporte
 from horarioLaboral import FueraDeHorario
+from blackList import ListaNegra
 
 
 
@@ -104,9 +105,9 @@ class Ventana(HasTraits):
 
 f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
-c1 = Configurador(script = f,nombre="Fuera de horario1", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
-
-v = Ventana(scripts=[c,c1],desde = date(2000,1,1))
+l = ListaNegra(categoria = 'sexo',lista = '/home/fede/Escritorio/seginf-2009/sexo.list')
+c1 = Configurador(script = l, nombre = 'Sexo', descripccion = "Muestra informacion sobre accesos a paginas de sexo")
+v = Ventana(scripts=[c,c1],desde = date(2000,1,1), hasta = date(2100,1,1))
 
 v.configure_traits()
 

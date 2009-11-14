@@ -46,6 +46,42 @@ class MensajeHTTP(Base):
                                                      self.ipOrigen, self.portOrigen,
                                                      self.ipDestino, self.portDestino)
 
+
+class RequestNoHTTP(Base):
+    __tablename__ = 'requestsNo'
+    id = Column(Integer, primary_key=True)
+    ipOrigen = Column(String)
+    ipDestino = Column(String)
+    portOrigen = Column(Integer)
+    portDestino = Column(Integer)
+    body = Column(PickleType)
+    datetime = Column(DateTime)
+    
+    def __init__(self,ipOrigen,ipDestino,portOrigen,portDestino,body,datetime):
+        self.ipOrigen = ipOrigen
+        self.ipDestino = ipDestino
+        self.portDestino = portDestino
+        self.portOrigen = portOrigen
+        self.body = body
+        self.datetime = datetime
+        
+class ResponseNoHTTP(Base):
+    __tablename__ = 'responsesNo'
+    id = Column(Integer, primary_key=True)
+    ipOrigen = Column(String)
+    ipDestino = Column(String)
+    portOrigen = Column(Integer)
+    portDestino = Column(Integer)
+    body = Column(PickleType)
+    datetime = Column(DateTime)
+    
+    def __init__(self,ipOrigen,ipDestino,portOrigen,portDestino,body,datetime):
+        self.ipOrigen = ipOrigen
+        self.ipDestino = ipDestino
+        self.portDestino = portDestino
+        self.portOrigen = portOrigen
+        self.body = body
+        self.datetime = datetime
     
 class RequestHTTP(MensajeHTTP):
     __tablename__ = 'requests'

@@ -9,6 +9,7 @@ import os
 from enthought.pyface.message_dialog import MessageDialog
 from enthought.pyface.progress_dialog import ProgressDialog
 from enthought.traits.ui.menu import OKButton, CancelButton
+from latex import LatexFactory
 
 import psyco
 
@@ -20,7 +21,7 @@ psyco.full()
 
 class ListaNegra(Reporte):
     dicc = None
-    
+    render = LatexFactory()
     categoria = Str
     lista = File
     plotInfraccionesPorUsuario = Bool
@@ -52,7 +53,7 @@ class ListaNegra(Reporte):
         
         lineas = f.readlines()
       
-        self.dicc = set((x[:-1] for x in lineas))
+        self.dicc = set((unicode(x[:-1]) for x in lineas))
 
         
             
@@ -66,29 +67,35 @@ class ListaNegra(Reporte):
         return query.all()
         
     
-    
+    def esta(self,nombre):
+        nombre = unicode(nombre)
+        cand = ""
+        for each in reversed(nombre.split('.')):
+            cand = each + cand
+            if cand in self.dicc:
+                print cand
+                return cand
+            cand = '.'+cand
+        return None
+            
     def ejecutar(self,desde,hasta):
     
         try:
             self.cargarLista()
         except Exception, e:
-            
             print e
             return ""
         requests = self.obtenerRequests(desde,hasta)
+        textito = 'Visitas a paginas prohibidas de la categoria %s'%self.categoria
+        self.render.chapter(textito)
+        self.render.negrita('Periodo: %s - %s'%(desde,hasta))
+        self.render.nuevaLinea()
         if requests == []:
-            return \
-            """
-            \\chapter{Visitas a paginas prohibidas de la categoria %s}\n
-            \\textbf{Periodo: %s - %s}\n\n
-            \\textbf{No hay infracciones}\n
-            """%(self.categoria,desde,hasta)
+            self.render.negrita("No hay infracciones")
+            return self.render.generarOutput
+        
         else:
-            res = "\\chapter{Visitas a paginas prohibidas de la categoria %s}\n"%\
-                  self.categoria
-            res +="\\textbf{Periodo: %s - %s}\n\n"%(desde,hasta)
-            res += "\\textbf{Categoria: %s}\n"%self.categoria
-            res += "\\begin{itemize}\n"
+            self.render.texto("\\begin{itemize}\n")
             infractores = set()
             infracciones = defaultdict(lambda:0)
             requestsPorUsuarios = defaultdict(lambda:0)
@@ -101,66 +108,59 @@ class ListaNegra(Reporte):
             requestsInfractores = []
             for each in requests:
                 if 'host' in each.headers:
-                    if str(each.headers['host'][:4]) == 'www.':
-                        dominio = str(each.headers['host'])[4:]
-                    else:
-                        dominio = str(each.headers['host'])
-                    if dominio in self.dicc: 
-                        res += "\\item IP: %s \n\n Sitio: %s \n\n fecha: %s" % \
-                               (each.ipOrigen, each.headers['host'], each.datetime)
+                    print "host", each.headers['host']
+                    domain = self.esta(each.headers['host'])
+                    if domain != None:
+                        self.render.texto("\\item IP: %s \n\n Sitio: %s \n\n fecha: %s" % \
+                               (each.ipOrigen, domain, each.datetime))
                         infractores.add(each.ipOrigen)
                         infracciones[each.ipOrigen] += 1
-                        dominiosVisitadosPorUsuario[each.ipOrigen].add(each.headers['host'])
-                        dominiosVisitados.add(each.headers['host'])
-                        visitasADominios[each.headers['host']] += 1
+                        dominiosVisitadosPorUsuario[each.ipOrigen].add(domain)
+                        dominiosVisitados.add(domain)
+                        visitasADominios[domain] += 1
                         visitasTotales +=1
-                        visitasPorUsuario[each.ipOrigen][each.headers['host']] +=1
+                        visitasPorUsuario[each.ipOrigen][domain] +=1
                         encontre = True
                         requestsInfractores.append(each.id)
                 requestsPorUsuarios[each.ipOrigen] += 1
             if not encontre:
-                res += "\\item No hubo accesos a sitios de esta categoria\n"
-                res += "\\end{itemize}\n\n"
-                return res
-            res += "\\end{itemize}\n"
+                self.render.texto("\\item No hubo accesos a sitios de esta categoria\n")
+                self.render.texto("\\end{itemize}\n")
+                return self.render.generarOutput()
+            self.render.texto("\\end{itemize}\n")
             
             
-            if self.plotPorcentajeDeRequests:
-                res += self.plotearPorcentaje(len(requests), visitasTotales,desde,hasta)
-            if self.plotPorcentajePorUsuario:
-                res += self.plotearPorcentajePorUsuario(infractores, infracciones, requestsPorUsuarios)
-            if self.plotInfraccionesPorUsuario:
-                res += self.plotearInfraccionesPorUsuario(infractores,infracciones,visitasTotales)
-            if self.plotDominiosVistadosPorUsuario:
-                res += self.plotearDominiosVisitadosPorUsuario(infractores,dominiosVisitadosPorUsuario,visitasPorUsuario)
-            if self.plotDominiosVistados:
-                res += self.plotearDominiosVistados(dominiosVisitados, visitasADominios,visitasTotales,desde,hasta)
-            if self.plotPorcentajeDeTrafico:
-                res += self.plotearTrafico(requestsInfractores,dominiosVisitados,desde,hasta)
+            self.plotearPorcentaje(len(requests), visitasTotales,desde,hasta)
+            self.plotearPorcentajePorUsuario(infractores, infracciones, requestsPorUsuarios)
+            self.plotearInfraccionesPorUsuario(infractores,infracciones,visitasTotales)
+            self.plotearDominiosVisitadosPorUsuario(infractores,dominiosVisitadosPorUsuario,visitasPorUsuario)
+            self.plotearDominiosVistados(dominiosVisitados, visitasADominios,visitasTotales,desde,hasta)
+            self.plotearTrafico(requestsInfractores,dominiosVisitados,desde,hasta)
  
-            return res
+            return self.render.generarOutput()
     
     
     def plotearInfraccionesPorUsuario(self,infractores,infracciones,totales):
         y = [infracciones[i] for i in infractores]
+        self.render.section('Infracciones por usuario en la categori %s'%\
+                            self.categoria)
         maximo = max(y)
-        nombre = 'Infracciones_Usuario_%s.png'%self.categoria
-        CairoPlot.bar_plot (nombre,
+        self.render.texto('Las siguientes son las infracciones por usuario para\
+                          sitios de la categoria %s'%self.categoria)
+        aux = dict(zip(infracciones,y))
+        self.render.itemize(aux, 'requests')
+        if self.plotearInfraccionesPorUsuario:
+            nombre = 'Infracciones_Usuario_%s.png'%self.categoria
+            CairoPlot.bar_plot (nombre,
             y, 400, 300, 
             border = 20, grid = True, rounded_corners = True,
             h_labels=infractores,
             v_labels = ['0',str(maximo/4.0),str(maximo/2.0)
             ,str(3*maximo/4.0),str(maximo)],three_dimension=True)
-        return \
-        """
-        \\begin{figure}[H]
-        \\centering
-        \\includegraphics[width=12cm]{%s/%s}
-        \\caption{Cantidad de infracciones por usuario, sobre un total de %s}
-        \\end{figure}
+            self.render.figure("%s/%s"%(os.getcwdu(), nombre), caption = \
+                    'Cantidad de infracciones por usuario para la categoria %s,\
+                    sobre un total de %s'%(self.categoria, totales))
         
-        """% \
-        (os.getcwdu(), nombre,totales)
         
     def plotearDominiosVisitadosPorUsuario(self,infractores,
                                            dominiosVisitadosPorUsuario,

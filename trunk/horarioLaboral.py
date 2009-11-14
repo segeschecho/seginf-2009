@@ -3,7 +3,7 @@ from datetime import datetime,date
 from enthought.traits.api import *
 from enthought.traits.ui.api import *
 from enthought.traits.ui.menu import OKButton, CancelButton
-
+from latex import LatexFactory
 from reporte import Reporte
 import CairoPlot
 from collections import defaultdict
@@ -16,9 +16,11 @@ class FueraDeHorario(Reporte):
     semana = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo']
     plotHorarios = Bool
     plotUsuarios = Bool
+    verbose = Bool
     horario_entrada = Range(value=8,low=0,high=23)
     horario_salida = Range(value=17,low=0,high=23)
     dias = List()
+    render = LatexFactory()
     
     def _dias_default(self):
         return range(5)
@@ -38,7 +40,7 @@ class FueraDeHorario(Reporte):
                              mode='spinner' )),
             Item('dias',style='custom',editor= \
                  CheckListEditor(values=[(x,semana[x]) for x in range(7)])),
-            'plotUsuarios', 'plotHorarios', buttons=[OKButton, CancelButton]
+            'plotUsuarios', 'plotHorarios', 'verbose',buttons=[OKButton, CancelButton]
             )
     
     
@@ -73,83 +75,96 @@ class FueraDeHorario(Reporte):
                 cant[each.ipOrigen] = 1
             else:
                 cant[each.ipOrigen] +=1
-        CairoPlot.pie_plot("FueraDeHorario_usuarios.png", cant, 800, 500,shadow = True, gradient = True)
-        return \
-                      """
-                       \\section{Uso de usuarios infractores}
-                       
-                       \\textbf{Periodo: %s - %s}\n
-                       La figura \\ref{fuerdaDeHorario_usuarios} muestra la cantidad de accesos que hicieron los usuarios fuera del horario
-                       laboral
-                       \\begin{figure}[H]
-                       \\centering
-                       \\includegraphics[width=12cm]{%s/FueraDeHorario_usuarios.png}
-                       \\caption{Cantidad de accesos de los usuarios infractores (sobre un total de %s pedidos)}
-                       \\label{fuerdaDeHorario_usuarios}
-                       \\end{figure}
-      
-                       """%(desde,hasta,os.getcwdu(),len(infractores))
+        if len(cant) > 10:
+            aux =cant.keys()
+            aux.sort(cmp=lambda x,y: -1 if cant[x] < cant[y] else 1 if cant[x] > cant[y] else 0)
+            descarte = aux[10:]
+            suma = 0
+            for each in descarte:
+                suma += cant[each]
+                del cant[each]
+            cant['otros'] = suma
+            
+        
+        self.render.section('Uso de usuarios infractores')
+        self.render.texto('La cantidad de requests que hicieron los horarios infractores es:')
+        self.render.nuevaLinea()
+        self.render.negrita('Periodo: %s - %s'%(desde,hasta))
+        self.render.itemize(cant,'requests')
+        self.render.nuevaLinea()
+        if self.plotUsuarios:
+            CairoPlot.pie_plot("FueraDeHorario_usuarios.png", cant, 800, 500,shadow = True, gradient = True)
+            self.render.figure('%s/FueraDeHorario_usuarios.png'%os.getcwdu(),caption=\
+                           'Cantidad de accesos de los usuarios infractores (sobre un total de %s pedidos)'\
+                           %len(infractores))
+        
                        
     def graficarHorarios(self,desde,hasta):
         horas = range(24)
-        cant = defaultdict(lambda:0)
+        cant = dict(((x,0) for x in range(24)))
         pedidos = self.obtenerPedidos(desde,hasta)
         if pedidos == []:
             return ""
         for each in pedidos:
             cant[each.datetime.hour]+=1
-        maximo = max([cant[hora] for hora in range(23)])
-        CairoPlot.bar_plot ('FueraDeHorario_horarios.png',
+        maximo = max([cant[hora] for hora in range(24)])
+        
+        largo = len(pedidos)
+        self.render.section('Uso de internet por horarios')
+        self.render.negrita('Periodo: %s - %s'%(desde,hasta))
+        self.render.nuevaLinea()
+        self.render.texto('El uso de internet segun las horas es el siguiente:')
+        self.render.nuevaLinea()
+        cant2 = dict(((x,cant[x]) for x in cant if cant[x] > 0))
+        self.render.itemize(cant2,'requests')
+        self.render.nuevaLinea()
+        if self.plotHorarios:
+            CairoPlot.bar_plot ('FueraDeHorario_horarios.png',
             [cant[h] for h in horas], 400, 300, 
             border = 20, grid = True, rounded_corners = True,
             h_labels=[str(x) for x in horas],
             v_labels = ['0',str(maximo/4.0),str(maximo/2.0)
             ,str(3*maximo/4.0),str(maximo)],three_dimension=True)
-        largo = len(pedidos)
-        return """
-                \\section{Uso de internet por horarios}
-                  
-                \\textbf{Periodo: %s - %s}\n
-                La figura \\ref{fuerdaDeHorario_horarios} muestra el uso de
-                internet a lo largo de las distintas horas del dia
-                \\begin{figure}[H]
-                \\centering
-                \includegraphics[width=10cm]{%s/FueraDeHorario_horarios.png}
-                \\caption{Distribucion de los accesos segun el horario (sobre un total de %s pedidos)}
-                \label{fuerdaDeHorario_horarios}
-                \\end{figure}
-                      
-                """%(desde,hasta,os.getcwdu(),largo)
+            self.render.figure('%s/FueraDeHorario_horarios.png'%os.getcwdu(),caption=\
+                           'Distribucion de los accesos segun el horario (sobre un total de %s pedidos'\
+                           %largo)
+
     
-    def ejecutar(self,desde,hasta):
-        infractores = self.obtenerInfractores(desde,hasta)
-        if infractores == []:
-            return \
-            """
-            \\chapter{Uso de internet fuera del horario laboral}\n
-            \\textbf{Periodo: %s - %s}\n\n
-            \\textbf{No hay infracciones}\n
-            """%(desde,hasta)
-        else:
-            res = "\\chapter{Uso de internet fuera del horario laboral}\n"
-            res +="\\textbf{Periodo: %s - %s}\n\n"%(desde,hasta)
-            res += "\\begin{itemize}\n"
-            for each in infractores:
-                res +="\\item IP de origen: %s \n\n fecha: %s \n\n direccion: %s \n\n \
+    def _generarItemizeVerbose(self,infractores):
+        res = "\\begin{itemize}\n"
+        for each in infractores:
+            res +="\\item IP de origen: %s \n\n fecha: %s \n\n direccion: %s \n\n \
                       url: %s\n\n"%(each.ipOrigen, each.datetime,
                       "host desconocido" if not 'host' in each.headers \
                       else "\\verb<"+each.headers['host']+"<", "\\verb<"+each.uri+"<")
                       
-            res += "\\end{itemize}\n"
+        res += "\\end{itemize}\n"
+        return res
+        
+    
+    def ejecutar(self,desde,hasta):
+        infractores = self.obtenerInfractores(desde,hasta)
+        self.render.chapter("Uso de internet fuera del horario laboral")
             
-            if self.plotHorarios:
-                res += self.graficarHorarios(desde,hasta)
+        self.render.negrita("Periodo: %s - %s"%(desde,hasta))
+        self.render.nuevaLinea()
+        if infractores == []:
                 
-            if self.plotUsuarios:
-                res += self.graficarUsuarios(desde,hasta,infractores)            
-            res += "\\newpage"    
+            self.render.negrita("No hay infracciones"%(desde,hasta))
+            self.render.nuevaLinea()
+            return self.render.generarOutput()
+        else:
+            if self.verbose:
+                self.render.texto(self._generarItemizeVerbose(infractores))
+        
+            
+            self.graficarHorarios(desde,hasta)
+                
+            
+            self.graficarUsuarios(desde,hasta,infractores)            
+        self.render.nuevaPagina()
                             
-            return res
+        return self.render.generarOutput()
         
 #variables necesarias para poder importar el modulo 
 reporte = FueraDeHorario()

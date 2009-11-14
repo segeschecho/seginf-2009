@@ -3,7 +3,7 @@
 from scapy.all import *
 from dpkt.http import Request, Response
 
-from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP
+from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, RequestNoHTTP, ResponseNoHTTP
 import sys
 import cStringIO
 import datetime
@@ -112,10 +112,8 @@ class Conexion(object):
         self.paquetes = paquete
         self.secuencias = secuencia
         
-#TODO: refactor de esta clase, cambiar los diccionarios por clases para "conexiones"
-#Clase que toma los mensajes que llegan y va armando los mensajes HTTP
-class HTTPAssembler(object):
-    
+
+class IdentificadorDeHTTP(object):
     #Metodos posibles para un request
     _methods = dict.fromkeys((
         'GET', 'PUT', 'ICY',
@@ -131,8 +129,119 @@ class HTTPAssembler(object):
         'BASELINE-CONTROL'
         ))
     
-    #Nombre del protcolo que aparece en los mensajes
     _proto = 'HTTP'
+    
+    #Cheque que un paquete pueda ser el comienzo de un request
+    def _comienzoDeRequest(self,buf):
+        f = cStringIO.StringIO(buf)
+        line = f.readline()
+        l = line.strip().split()
+        return not( len(l) != 3 or l[0] not in self._methods or \
+           not l[2].startswith(self._proto))
+            
+        
+    #Chequea que un paquete pueda ser el comienzo de una response
+    def _comienzoDeResponse(self,buf):
+        f = cStringIO.StringIO(buf)
+        line = f.readline()
+        l = line.strip().split(None, 2)
+        return not(len(l) < 2 or not l[0].startswith(self._proto)\
+                   or not l[1].isdigit())
+    
+    
+class ConexionPotencialmenteNoHTTP(object):
+    
+    def __init__(self,cuadrupla):
+        self.body = ""
+        self.cuadrupla = cuadrupla
+        self.conBody = False
+        self.datetime = datetime.datetime.now()
+        self.identificadorHTTP = IdentificadorDeHTTP()
+        self.seQueNoEs = None
+        
+    
+    def noEsHTTP(self):
+        if not self.conBody:
+            return True
+        elif self.seQueNoEs:
+            return seQueNoEs
+        elif self.seQueNoEs == None:
+            self.seQueNoEs = not (self.identificadorHTTP._comienzoDeRequest(self.body) \
+                             or self.identificadorHTTP._comienzoDeResponse(self.body))
+        return seQueNoEs
+            
+
+    def agregarPaquete(self,chunk):
+        self.body += chunk.load
+            
+    
+class PersistidorNoHTTP(object):
+    
+    def __init__(self,port=STANDARD_PORT):
+        self.port = port
+    
+    def persistir(self, mensaje):
+        s = get_session()
+        ipOrigen, ipDestino, portOrigen, portDestino = mensaje.cuadrupla
+        if portOrigen == self.port:
+            s.add(ResponseNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime))
+        else:
+            s.add(RequestNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime))
+        s.commit()
+
+
+class NoHTTPAssembler(object):
+    
+    def __init__(self,port=STANDARD_PORT):
+        self.port = port
+        
+        self.conexiones = {}
+        
+        self.identificadorHTTP = IdentificadorDeHTTP()
+        
+        self.ultimoPaquete = None
+        
+        self.persistidorNoHTTP = PersistidorNoHTTP(self.port)
+    
+    def _get_cuadrupla(self,pkt):
+        pktIP = pkt.getlayer(IP)
+        ipOrigen = pktIP.src
+        ipDestino = pktIP.dst
+        pktTCP = pktIP.getlayer(TCP)
+        portOrigen = pktTCP.sport
+        portDestino = pktTCP.dport
+        return (ipOrigen,ipDestino,portOrigen,portDestino)
+        
+    def nuevoPaquete(self,pkt):
+        #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
+        if self.ultimoPaquete == pkt:
+            return
+        self.ultimoPaquete = pkt 
+        cuadrupla = self._get_cuadrupla(pkt)
+        if pkt.getlayer(TCP).flags & 2 > 0: #flag de syn
+            self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
+        if cuadrupla in self.conexiones:
+            if pkt.lastlayer().haslayer(Raw):
+                self.conexiones[cuadrupla].agregarPaquete(pkt.getlayer(Raw))
+                if not self.conexiones[cuadrupla].noEsHTTP():
+                    del self.conexiones[cuadrupla]
+                    return
+            if (pkt.getlayer(TCP).flags & 1) > 0: #flag de fin    
+                self.persistidorNoHTTP.persistir(self.conexiones[cuadrupla])
+                del self.conexiones[cuadrupla]
+                return
+            if (pkt.getlayer(TCP).flags & 4) > 0: #flag de reset    
+                del self.conexiones[cuadrupla]
+                return
+
+        
+        
+            
+            
+
+class HTTPAssembler(object):
+    
+
 
     def __init__(self,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
@@ -141,7 +250,9 @@ class HTTPAssembler(object):
         self.conexiones = {}
         # HACK: esta variable la usamos por si corremos el sniffer en la misma
         # maquina que el proxy y scappy se vuelve loco
-        self.ultimoPaquete = None    
+        self.ultimoPaquete = None
+        
+        self.identificadorHTTP = IdentificadorDeHTTP()
     
         
         
@@ -183,29 +294,13 @@ class HTTPAssembler(object):
                                                    [pkt.getlayer(TCP).seq],
                                                    datetime.datetime.now())
 
-    #Cheque que un paquete pueda ser el comienzo de un request
-    def _comienzoDeRequest(self,buf):
-        f = cStringIO.StringIO(buf)
-        line = f.readline()
-        l = line.strip().split()
-        return not( len(l) != 3 or l[0] not in self._methods or \
-           not l[2].startswith(self._proto))
-            
-        
-    #Chequea que un paquete pueda ser el comienzo de una response
-    def _comienzoDeResponse(self,buf):
-        f = cStringIO.StringIO(buf)
-        line = f.readline()
-        l = line.strip().split(None, 2)
-        return not(len(l) < 2 or not l[0].startswith(self._proto)\
-                   or not l[1].isdigit())
             
 
     #Metodo para atender paquetes que son potenciales request        
     def request(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
         #Si no tenemos la cuadrupla ya guardada, entonces tiene q iniciarse una request
-        if not cuadrupla in self.conexiones and not self._comienzoDeRequest(pkt.getlayer(Raw).load):
+        if not cuadrupla in self.conexiones and not self.identificadorHTTP._comienzoDeRequest(pkt.getlayer(Raw).load):
             return
         #Agrego el fragmento que llego
         self._agregarPaquete(pkt)
@@ -234,7 +329,7 @@ class HTTPAssembler(object):
     #Metodo para atender potenciales responses (similar al de las requests)
     def response(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
-        if not cuadrupla in self.conexiones and not self._comienzoDeResponse(pkt.getlayer(Raw).load):
+        if not cuadrupla in self.conexiones and not self.identificadorHTTP._comienzoDeResponse(pkt.getlayer(Raw).load):
             return
         self._agregarPaquete(pkt)
         try:
@@ -256,7 +351,7 @@ class HTTPAssembler(object):
                 c.response = r
                 c.datetimeResponse = timestamp
                 c.cuadrupla = cuadruplaRequest
-                c.terminar()
+                c.terminada()
                 
                 
         except Exception, e:
@@ -325,7 +420,8 @@ if options.dump_file:
 if options.verbose:
     vph = VerbosePacketHandler()
     hs.addCallback(vph.nuevoPaquete)
-    
+hn = NoHTTPAssembler(port = puerto)
+hs.addCallback(hn.nuevoPaquete)
 hs.sniffear()
 
 if options.dump_file:
@@ -333,7 +429,7 @@ if options.dump_file:
 
 #vaciamos los requests que quedaron sin respuesta (esto hay q mejorarlo)
 for each in ha.conversaciones:
-    each.terminar()
+    ha.conversaciones[each].terminada()
 
 
     

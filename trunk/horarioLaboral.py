@@ -29,7 +29,6 @@ class FueraDeHorario(Reporte):
     def _horario_salida_default(self):
         return 17
     
-    
     view = View( 
             Item('horario_entrada', show_label=True, editor = \
                  RangeEditor(high_name = 'maximo', low_name = 'minimo',
@@ -74,7 +73,7 @@ class FueraDeHorario(Reporte):
                 cant[each.ipOrigen] = 1
             else:
                 cant[each.ipOrigen] +=1
-        CairoPlot.pie_plot("FueraDeHorario_usuarios.png", cant, 500, 500)
+        CairoPlot.pie_plot("FueraDeHorario_usuarios.png", cant, 800, 500,shadow = True, gradient = True)
         return \
                       """
                        \\section{Uso de usuarios infractores}
@@ -84,7 +83,7 @@ class FueraDeHorario(Reporte):
                        laboral
                        \\begin{figure}[H]
                        \\centering
-                       \\includegraphics[width=10cm]{%s/FueraDeHorario_usuarios.png}
+                       \\includegraphics[width=12cm]{%s/FueraDeHorario_usuarios.png}
                        \\caption{Cantidad de accesos de los usuarios infractores (sobre un total de %s pedidos)}
                        \\label{fuerdaDeHorario_usuarios}
                        \\end{figure}
@@ -111,7 +110,8 @@ class FueraDeHorario(Reporte):
                 \\section{Uso de internet por horarios}
                   
                 \\textbf{Periodo: %s - %s}\n
-                La figura \\ref{fuerdaDeHorario_horarios} muestra el uso de internet a lo largo de las distintas horas del dia
+                La figura \\ref{fuerdaDeHorario_horarios} muestra el uso de
+                internet a lo largo de las distintas horas del dia
                 \\begin{figure}[H]
                 \\centering
                 \includegraphics[width=10cm]{%s/FueraDeHorario_horarios.png}
@@ -135,13 +135,18 @@ class FueraDeHorario(Reporte):
             res +="\\textbf{Periodo: %s - %s}\n\n"%(desde,hasta)
             res += "\\begin{itemize}\n"
             for each in infractores:
-                res +="\\item IP de origen: %s \n\n fecha: %s \n\n direccion: %s \n\n url: %s\n\n"%(each.ipOrigen, each.datetime,"host desconocido" if not 'host' in each.headers else "\\verb<"+each.headers['host']+"<", "\\verb<"+each.uri+"<")
+                res +="\\item IP de origen: %s \n\n fecha: %s \n\n direccion: %s \n\n \
+                      url: %s\n\n"%(each.ipOrigen, each.datetime,
+                      "host desconocido" if not 'host' in each.headers \
+                      else "\\verb<"+each.headers['host']+"<", "\\verb<"+each.uri+"<")
+                      
             res += "\\end{itemize}\n"
+            
             if self.plotHorarios:
                 res += self.graficarHorarios(desde,hasta)
                 
             if self.plotUsuarios:
-                res += self.graficarUsuarios(desde,hasta,infractores)
+                res += self.graficarUsuarios(desde,hasta,infractores)            
             res += "\\newpage"    
                             
             return res

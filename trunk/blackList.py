@@ -1,4 +1,4 @@
-from persistencia import get_session, RequestHTTP, ResponseHTTP, Conversacion
+from persistencia import get_session, RequestHTTP, ResponseHTTP
 from datetime import datetime,date
 from enthought.traits.api import *
 from enthought.traits.ui.api import *
@@ -20,6 +20,7 @@ psyco.full()
 
 class ListaNegra(Reporte):
     dicc = None
+    
     categoria = Str
     lista = File
     plotInfraccionesPorUsuario = Bool
@@ -67,6 +68,7 @@ class ListaNegra(Reporte):
     
     
     def ejecutar(self,desde,hasta):
+    
         try:
             self.cargarLista()
         except Exception, e:
@@ -99,7 +101,10 @@ class ListaNegra(Reporte):
             requestsInfractores = []
             for each in requests:
                 if 'host' in each.headers:
-                    dominio = str(each.headers['host']).partition('.')[2]
+                    if str(each.headers['host'][:4]) == 'www.':
+                        dominio = str(each.headers['host'])[4:]
+                    else:
+                        dominio = str(each.headers['host'])
                     if dominio in self.dicc: 
                         res += "\\item IP: %s \n\n Sitio: %s \n\n fecha: %s" % \
                                (each.ipOrigen, each.headers['host'], each.datetime)
@@ -133,8 +138,6 @@ class ListaNegra(Reporte):
             if self.plotPorcentajeDeTrafico:
                 res += self.plotearTrafico(requestsInfractores,dominiosVisitados,desde,hasta)
  
-            
-            
             return res
     
     
@@ -152,7 +155,7 @@ class ListaNegra(Reporte):
         """
         \\begin{figure}[H]
         \\centering
-        \\includegraphics[width=10cm]{%s/%s}
+        \\includegraphics[width=12cm]{%s/%s}
         \\caption{Cantidad de infracciones por usuario, sobre un total de %s}
         \\end{figure}
         
@@ -172,15 +175,15 @@ class ListaNegra(Reporte):
         d = dict([(dom, cantPorDominio[dom]) for dom in dominios])
         total = sum([cantPorDominio[dom] for dom in dominios])
         nombre = "dominios_%s_%s.png" % (self.categoria,usr.replace('.',''))
-        CairoPlot.pie_plot(nombre,d, 800,700,gradient=True,
+        CairoPlot.pie_plot(nombre,d, 1000,500,gradient=True,
             shadow=True
             )
         return \
         """
         \\begin{figure}[H]
         \\centering
-        \\includegraphics[width=14cm]{%s/%s}
-        \\caption{Dominios visitados por %s, categoria %s(total de visitas: %s)}
+        \\includegraphics[width=12cm]{%s/%s}
+        \\caption{Dominios visitados por %s, categoria %s(total de requests: %s)}
         \\end{figure}
         
 
@@ -201,13 +204,13 @@ class ListaNegra(Reporte):
 
         d = {'Resto':total - infracciones, 'Infraccion':infracciones}
         nombre = "porcentaje_%s_%s.png" % (self.categoria,usr.replace('.',''))
-        CairoPlot.pie_plot(nombre,d, 500,500)
+        CairoPlot.pie_plot(nombre,d, 800,500,shadow=True,gradient=True)
         return \
         """
         \\begin{figure}[H]
         \\centering
         \\includegraphics[width=12cm]{%s/%s}
-        \\caption{Porcentaje de visitas infractoras para %s, categoria %s(total de visitas: %s)}
+        \\caption{Porcentaje de requests infractoras para %s, categoria %s(total de requests: %s)}
         \\end{figure}
         
 
@@ -219,18 +222,28 @@ class ListaNegra(Reporte):
     def plotearPorcentaje(self,total, infraccion,desde,hasta):
         d = { 'Resto':total-infraccion,'Infraccion':infraccion}
         nombre = "porcentaje_%s.png" % self.categoria
-        CairoPlot.pie_plot(nombre,d, 700, 600)
-        return \
+        CairoPlot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
+        res = \
         """
+        \\section{Porcentaje de requests infractores %s}
+        En esta seccion se muestra que porcentaje de todos los requests hechos,
+        corresponden a requests a sitios infractores.
+        
         \\begin{figure}[H]
         \\centering
         \\includegraphics[width=12cm]{%s/%s}
-        \\caption{Porcentaje de visitas infractoras categoria %s (total de visitas: %s)}
+        \\caption{Porcentaje de requests infractoras categoria %s (total de requests: %s)}
         \\label{%s}
         \\end{figure}
      
-        """%(os.getcwdu(),nombre, self.categoria,total,
+        """%(self.categoria,os.getcwdu(),nombre, self.categoria,total,
             "Porcentaje_%s" % self.categoria)
+        res += "\\begin{itemize}\n"
+        res += "\\item En infraccion %s\n"%(1.0*infraccion/total)
+        res += "\\item Resto %s\n"%(1.0*(total-infraccion)/total)
+        res += "\\end{itemize}\n"
+        res += "\n\n"
+        return res
         
         
         
@@ -242,17 +255,17 @@ class ListaNegra(Reporte):
         d = dict([(x,visitas[x]) for x in dominios])
         
         nombre = "Dominios_visitados_%s.png" % self.categoria
-        CairoPlot.pie_plot(nombre,d, 800, 700)
+        CairoPlot.pie_plot(nombre,d, 800, 500, shadow=True, gradient=True)
         res = \
                       """
-                       \\section{Dominos visitados en infraccion}
+                       \\section{Dominos visitados en infraccion %s}
                        \\begin{figure}[H]
                        \\centering
-                       \\includegraphics[width=14cm]{%s/%s}
-                       \\caption{Dominios visitados (sobre un total de %s visitas en infraccion)}
+                       \\includegraphics[width=12cm]{%s/%s}
+                       \\caption{Dominios visitados (sobre un total de %s requests en infraccion)}
                        \\label{%s}
                        \\end{figure}\n
-                       """%(os.getcwdu(),nombre,totales,
+                       """%(self.categoria,os.getcwdu(),nombre,totales,
                             "Dominios_visitados_%s" % self.categoria)
         res += self.armarItemize(d,'visitas')
         return res
@@ -268,24 +281,19 @@ class ListaNegra(Reporte):
         query.filter(ResponseHTTP.datetime >= str(d) )
         query.filter(ResponseHTTP.datetime <= str(h) )
         responsesAll = query.all()
-        query = s.query(Conversacion)
-        query.filter(Conversacion.datetime >= str(d) )
-        query.filter(Conversacion.datetime <= str(h) )
-        conversacionesAll = query.all()
-        return (requestsAll, responsesAll, conversacionesAll)
+        return (requestsAll, responsesAll)
         
     
     def plotearTrafico(self, requests,dominios,desde,hasta):
-        requestAll, responseAll, conversacionesAll = self._obtenerTodoEnRango(desde,hasta)
+        requestAll, responseAll = self._obtenerTodoEnRango(desde,hasta)
         responses = dict([(each.id,each) for each in responseAll])
         
-        conversaciones = dict([(each.id_request,each.id_reponse) for each in conversacionesAll])
         traficoTotal = 0
         traficoInfraccion = defaultdict(lambda:0)
         for each in requestAll:
             traficoReq = len(each.body)
-            traficoResp = len(responses[conversaciones[each.id]].body) \
-                          if each.id in conversaciones else 0
+            traficoResp = len(responses[each.response].body) \
+                          if each.response in responses else 0
             traficoTotal += traficoReq
             traficoTotal += traficoResp
             if each.id in requests:
@@ -296,12 +304,12 @@ class ListaNegra(Reporte):
         for each in dominios:
             d[each] = traficoInfraccion[each]
         nombre = "trafico_%s.png" % self.categoria
-        CairoPlot.pie_plot(nombre,d, 800, 700)
+        CairoPlot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
         res = \
                       """
                        \\begin{figure}[H]
                        \\centering
-                       \\includegraphics[width=14cm]{%s/%s}
+                       \\includegraphics[width=12cm]{%s/%s}
                        \\caption{Porcentaje del trafico en infraccion para la categoria %s (total de trafico: %s bytes)}
                        \\end{figure}
       

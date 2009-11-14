@@ -13,6 +13,7 @@ from tex import convert
 from reporte import Reporte
 from horarioLaboral import FueraDeHorario
 from blackList import ListaNegra
+from ajax import Ajax
 
 
 
@@ -51,10 +52,13 @@ class Ventana(HasTraits):
     def _generarReporte_fired(self):
         desde = self.desde
         hasta = self.hasta
+        
+        
         if hasta < desde:
             Error(mensaje='Hasta debe ser posterior a desde').edit_traits()
             return
         seleccionados = [x for x in self.scripts if x.seleccionado]
+        
         progress = ProgressDialog(title="Progreso", message="Generando reportes",
                               max=len(seleccionados)+1, show_time=True, can_cancel=True)
         progress.open()
@@ -65,9 +69,11 @@ class Ventana(HasTraits):
                 progress.update(i)
                 i +=1
                 
+        #DEBUG        
         fe = open('fede.tex','w')
         fe.write(unicode(documento%res))
         fe.close()
+        
         if self.salida[-4:] != '.pdf':
             self.salida = self.salida + '.pdf'
         f = open(self.salida,'w')
@@ -107,7 +113,11 @@ f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
 l = ListaNegra(categoria = 'sexo',lista = '/home/fede/Escritorio/seginf-2009/sexo.list')
 c1 = Configurador(script = l, nombre = 'Sexo', descripccion = "Muestra informacion sobre accesos a paginas de sexo")
-v = Ventana(scripts=[c,c1],desde = date(2000,1,1), hasta = date(2100,1,1))
+a = Ajax()
+c2 = Configurador(script = a, nombre="Trafico Ajax", descripcion = "Muestra el uso de Ajax en la red")
+l1 = ListaNegra(categora = 'redes sociales', lista = '/home/fede/facultad/2cuatri2009/seginf/seginf-2009/domains')
+c3 = Configurador(script = l1, nombre='Redes sociales', descripciones = "Informa sobre el uso de redes sociales")
+v = Ventana(scripts=[c,c1,c2,c3],desde = date(2000,1,1), hasta = date(2100,1,1))
 
 v.configure_traits()
 

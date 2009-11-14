@@ -4,14 +4,14 @@
 
 
 
-from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Text, PickleType,Binary, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Text, PickleType,Binary, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import json
 
 engine = create_engine('sqlite:///http.sqlite')
-
+text = text
 
 Base = declarative_base()
 class MensajeHTTP(Base):
@@ -46,18 +46,6 @@ class MensajeHTTP(Base):
                                                      self.ipOrigen, self.portOrigen,
                                                      self.ipDestino, self.portDestino)
 
-# Esto probablemente era mejor como una one to one dentro de request, pero asi
-# es posible insertar la request y luego linkear con la response
-class Conversacion(Base):
-    __tablename__ = 'conversaciones'
-    id_request = Column(Integer, ForeignKey('requests.id'), primary_key=True)
-    id_reponse = Column(Integer, ForeignKey('responses.id'), primary_key=True)
-    datetime = Column(DateTime)
-    
-    def __init__(self, request, response, datetime):
-        self.id_response = response
-        self.id_request = request
-        self.datetime = datetime
     
 class RequestHTTP(MensajeHTTP):
     __tablename__ = 'requests'
@@ -65,13 +53,14 @@ class RequestHTTP(MensajeHTTP):
     id = Column(Integer, ForeignKey('mensajes.id'), primary_key=True)
     method = Column(String)
     uri = Column(String)
-    
+    response = Column(Integer, ForeignKey('responses.id'))
     def __init__(self,ipOrigen, ipDestino, portOrigen, portDestino, version,
-                 headers,body, datetime,method, uri):
+                 headers,body, datetime,method, uri, response = None):
         super(RequestHTTP,self).__init__(ipOrigen, ipDestino, portOrigen,
                                          portDestino,version, headers,body,datetime)
         self.uri = uri
         self.method = method
+        self.response = response
         
 class ResponseHTTP(MensajeHTTP):
     __tablename__ = 'responses'

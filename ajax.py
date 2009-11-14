@@ -78,7 +78,7 @@ class Ajax(Reporte):
                                                     unicode('application/javascript')]:
                 
                     responsesAjax.append(each)
-                print each.headers['content-type'].__repr__()
+                #print each.headers['content-type'].__repr__()
          
         # Obtenemos los request asociados a esos responses
         requestsAjax = []

@@ -3,13 +3,16 @@
 from scapy.all import *
 from dpkt.http import Request, Response
 
-from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Conversacion
+from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP
 import sys
 import cStringIO
 import datetime
 
 STANDARD_PORT = 8080
 DEFAULT_CAP ='captura.cap'
+
+#TODO: hacer la tabla de victoria
+#FIXME: ojo con las requests sin responses
 
 # Clase base de sniffer
 # Permite agregarle callbacks para que se llamen cada vez que llegue un paquete
@@ -27,6 +30,7 @@ class Sniffer(object):
         for each in self.callbacks:
             each(pkt)
             
+
 # Clase que permite sniffear trafico tcp al puerto donde atiende el proxy
 class HTTPandHTTPSSniffer(Sniffer):
     def __init__(self,port=STANDARD_PORT):
@@ -46,38 +50,70 @@ class PersistidorHTTP(object):
         self.ultimoId = s.query(MensajeHTTP).count()
     
     def persistirResponse(self,cuadrupla, mensaje,timestamp):
-        self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,timestamp,mensaje.status,mensaje.reason)
+        self.persistirMensaje(cuadrupla,mensaje,ResponseHTTP,timestamp,
+                              mensaje.status,mensaje.reason)
         
     
-    def persistirRequest(self,cuadrupla, mensaje, timestamp):
-        self.persistirMensaje(cuadrupla,mensaje,RequestHTTP,timestamp,mensaje.method,mensaje.uri)
+    def persistirRequest(self,cuadrupla, mensaje, timestamp,response):
+        self.persistirMensaje(cuadrupla,mensaje,RequestHTTP,timestamp,
+                              mensaje.method,mensaje.uri,response)
         
-    
-    def persistirMensaje(self,cuadrupla, mensaje, clase, timestamp,arg0,arg1):
+        
+        
+    def persistirMensaje(self,cuadrupla, mensaje, clase, timestamp,arg0,arg1,arg2=None):
         try:
             s = get_session()
             ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
-            s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
+            
+            if arg2 is None:
+                print "aca tb llego"
+                s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
                               mensaje.headers,mensaje.body, timestamp,arg0,arg1))
+            else:
+                
+                s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
+                              mensaje.headers,mensaje.body, timestamp,arg0,arg1,arg2))
             s.commit()
             self.ultimoId +=1
         except Exception, e:
             print e
             sys.exit(-1)
-            
-    def persistirConversacion(self,req,resp,timestamp):
-        try:
-            s = get_session()
-            
-            s.add(Conversacion(req,resp,timestamp))
-            s.commit()
-        except Exception, e:
-            print e
-            sys.exit(-1)
+      
             
 
+class Conversacion(object):
+
+    persistidor = PersistidorHTTP()
+    
+    def __init__(self):
+        self.cuadrupla = None
+        self.request = None
+        self.response= None
+        self.datetimeRequest = None
+        self.datetimeResponse = None
+        
+    def terminada(self):
+        (ipDestino, ipOrigen, portDestino, portOrigen) = self.cuadrupla
+        idResp = None
+        if self.response:
+            cuadruplaRepsonse = (ipOrigen, ipDestino, portOrigen, portDestino)
+            self.persistidor.persistirResponse(cuadruplaRepsonse, self.response,
+                                           self.datetimeResponse)
+            idResp = self.persistidor.ultimoId
+        if self.request:
+            self.persistidor.persistirRequest(self.cuadrupla,self.request,
+                                          self.datetimeRequest, idResp)
+        
+        
+
+class Conexion(object):
+    def __init__(self,paquete,secuencia,datetime):
+        self.datetime = datetime
+        self.paquetes = paquete
+        self.secuencias = secuencia
+        
 #TODO: refactor de esta clase, cambiar los diccionarios por clases para "conexiones"
-#Clase que toma los mensajes que llegan y va armando los mensajes HTTP         
+#Clase que toma los mensajes que llegan y va armando los mensajes HTTP
 class HTTPAssembler(object):
     
     #Metodos posibles para un request
@@ -101,21 +137,15 @@ class HTTPAssembler(object):
     def __init__(self,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
         self.port = port
-        # Diccionario de cuadruplas (ipOrigen,ipDestino,portOrigen,portDestino)
-        # en fragmentos de mensajes HTTP
-        self.paquetes={}
-        # Diccionario de cuadruplas en numeros de secuencia, es para no appendear
-        # a los mensajes contenido de retrasmisiones
-        self.secuencias ={}
+        
+        self.conexiones = {}
         # HACK: esta variable la usamos por si corremos el sniffer en la misma
         # maquina que el proxy y scappy se vuelve loco
-        self.ultimoPaquete = None
+        self.ultimoPaquete = None    
+    
         
-        self.datetimes = {}
         
-        self.persistidor = PersistidorHTTP()
-        
-        self.requestSinResponses = {}
+        self.conversaciones = {}
         
     def nuevo_paquete(self,pkt):
         
@@ -143,82 +173,94 @@ class HTTPAssembler(object):
     
     def _agregarPaquete(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
-        if cuadrupla in self.paquetes:
-            if pkt.getlayer(TCP).seq in self.secuencias[cuadrupla]:
+        if cuadrupla in self.conexiones:
+            if pkt.getlayer(TCP).seq in self.conexiones[cuadrupla].secuencias:
                 return
-            self.paquetes[cuadrupla]+=pkt.getlayer(Raw).load
-            self.secuencias[cuadrupla].append(pkt.getlayer(TCP).seq)
+            self.conexiones[cuadrupla].paquetes+=pkt.getlayer(Raw).load
+            self.conexiones[cuadrupla].secuencias.append(pkt.getlayer(TCP).seq)
         else:
-            self.paquetes[cuadrupla]=pkt.getlayer(Raw).load
-            self.secuencias[cuadrupla] = [pkt.getlayer(TCP).seq]
-            self.datetimes[cuadrupla] = datetime.datetime.now()
+            self.conexiones[cuadrupla] = Conexion(pkt.getlayer(Raw).load,
+                                                   [pkt.getlayer(TCP).seq],
+                                                   datetime.datetime.now())
 
     #Cheque que un paquete pueda ser el comienzo de un request
     def _comienzoDeRequest(self,buf):
         f = cStringIO.StringIO(buf)
         line = f.readline()
         l = line.strip().split()
-        if len(l) != 3 or l[0] not in self._methods or \
-           not l[2].startswith(self._proto):
-            return False
-        else:
-            return True
+        return not( len(l) != 3 or l[0] not in self._methods or \
+           not l[2].startswith(self._proto))
+            
         
     #Chequea que un paquete pueda ser el comienzo de una response
     def _comienzoDeResponse(self,buf):
         f = cStringIO.StringIO(buf)
         line = f.readline()
         l = line.strip().split(None, 2)
-        if len(l) < 2 or not l[0].startswith(self._proto) or not l[1].isdigit():
-            return False
-        else:
-            return True
+        return not(len(l) < 2 or not l[0].startswith(self._proto)\
+                   or not l[1].isdigit())
+            
 
     #Metodo para atender paquetes que son potenciales request        
     def request(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
         #Si no tenemos la cuadrupla ya guardada, entonces tiene q iniciarse una request
-        if not cuadrupla in self.paquetes and not self._comienzoDeRequest(pkt.getlayer(Raw).load):
+        if not cuadrupla in self.conexiones and not self._comienzoDeRequest(pkt.getlayer(Raw).load):
             return
         #Agrego el fragmento que llego
         self._agregarPaquete(pkt)
         try:
             #Intento armar una request
-            r = Request(self.paquetes[cuadrupla])
-            timestamp = self.datetimes[cuadrupla]
+            r = Request(self.conexiones[cuadrupla].paquetes)
+            timestamp = self.conexiones[cuadrupla].datetime
             #Si pude, borro los fragmentos
             self._borrarCuadrupla(cuadrupla)
-            # y lo persisto
-            self.persistidor.persistirRequest(cuadrupla,r,timestamp)
-            self.requestSinResponses[cuadrupla] = self.persistidor.ultimoId
+            if not cuadrupla in self.conversaciones:
+                self.conversaciones[cuadrupla] = Conversacion()
+                self.conversaciones[cuadrupla].request = r
+                self.conversaciones[cuadrupla].datetimeRequest = timestamp
+                self.conversaciones[cuadrupla].cuadrupla = cuadrupla
+            
 
-        except:
+        except Exception, e:
             #No pude armar el request todavia
+            print e, "pataaaa"
             pass
         
     #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
     def _borrarCuadrupla(self, cuadrupla):
-        del self.paquetes[cuadrupla]
-        del self.secuencias[cuadrupla]
-        del self.datetimes[cuadrupla]
+        del self.conexiones[cuadrupla]
     
     #Metodo para atender potenciales responses (similar al de las requests)
     def response(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
-        if not cuadrupla in self.paquetes and not self._comienzoDeResponse(pkt.getlayer(Raw).load):
+        if not cuadrupla in self.conexiones and not self._comienzoDeResponse(pkt.getlayer(Raw).load):
             return
         self._agregarPaquete(pkt)
         try:
-            r = Response(self.paquetes[cuadrupla])
-            timestamp = self.datetimes[cuadrupla]
+            r = Response(self.conexiones[cuadrupla].paquetes)
+            timestamp = self.conexiones[cuadrupla].datetime
             self._borrarCuadrupla(cuadrupla)
-            self.persistidor.persistirResponse(cuadrupla,r,timestamp)
             (ipDestino, ipOrigen, portDestino, portOrigen) = cuadrupla
             cuadruplaRequest = (ipOrigen, ipDestino, portOrigen, portDestino)
-            if cuadruplaRequest in self.requestSinResponses:
-                self.persistidor.persistirConversacion(self.requestSinResponses[cuadruplaRequest],self.persistidor.ultimoId,timestamp)
-                del self.requestSinResponses[cuadruplaRequest]
-        except:
+
+            if cuadruplaRequest in self.conversaciones:
+                self.conversaciones[cuadruplaRequest].response = r
+                self.conversaciones[cuadruplaRequest].datetimeResponse = timestamp
+                
+                self.conversaciones[cuadruplaRequest].terminada()
+                
+                del self.conversaciones[cuadruplaRequest]
+            else:
+                c = Conversacion()
+                c.response = r
+                c.datetimeResponse = timestamp
+                c.cuadrupla = cuadruplaRequest
+                c.terminar()
+                
+                
+        except Exception, e:
+            print e, "pitaaaa"
             pass
             
     def _get_cuadrupla(self,pkt):
@@ -289,7 +331,9 @@ hs.sniffear()
 if options.dump_file:
     ca.dumpear()
 
-
+#vaciamos los requests que quedaron sin respuesta (esto hay q mejorarlo)
+for each in ha.conversaciones:
+    each.terminar()
 
 
     

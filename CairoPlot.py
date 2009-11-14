@@ -61,7 +61,7 @@ class Plot(object):
         self.labels[HORZ] = h_labels
         self.labels[VERT] = v_labels
 
-        self.font_size = 10
+        self.font_size = 25
         
         self.set_background (background)
         self.border = border
@@ -134,7 +134,7 @@ class Plot(object):
             self.data = [data]
             self.series_labels = None
         #FIXME: select some pre-sets and allow these to be parametrized:
-        random.seed(3)
+        #random.seed(3)
         self.series_colors = series_colors
         if not self.series_colors:
             self.series_colors = [[random.random() for i in range(3)]  for series in self.data]
@@ -604,7 +604,7 @@ class BarPlot(Plot):
             self.render_vert_labels()
 
     def render_labels(self):
-        self.context.set_font_size(self.font_size * 0.8)
+        self.context.set_font_size(self.font_size * 0.35)
 
         if self.labels[HORZ]:
             self.render_horz_labels()
@@ -728,6 +728,7 @@ class PiePlot(Plot):
         self.context.fill()
 
     def render_series_labels(self):
+        self.context.set_font_size(self.font_size * 0.8)
         angle = 0
         next_angle = 0
         x0,y0 = self.center

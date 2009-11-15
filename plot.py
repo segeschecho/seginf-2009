@@ -18,7 +18,8 @@ def pie_plot(nombre, d, x, y, gradient=True,shadow=True):
             x_grid_style = None, y_grid_style = None)
     colores = [fill_style.Plain(bgcolor=color.T(r=random.random(),g=random.random(),b=random.random())) for _ in data]
     plot = pp.T(data=data,
-                  shadow = (2, -2, fill_style.black),
+                  shadow = (2, -2,fill_style.black),
+                  arc_offsets=[0],
                   label_offset = 25,
                   arrow_style = arrow.a3,radius=min(x,y)/4,
                   fill_styles=colores)

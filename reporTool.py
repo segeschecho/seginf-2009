@@ -6,6 +6,7 @@ from enthought.traits.ui.api import *
 from enthought.pyface.progress_dialog import ProgressDialog
 from enthought.pyface.file_dialog import FileDialog
 from enthought.pyface.message_dialog import MessageDialog
+
 import os
 import tempfile
 from templates import documento
@@ -35,11 +36,6 @@ class Configurador(HasTraits):
                 Item('seleccionado'))
 
 
-class Error(HasTraits):
-    mensaje=Str("Error")
-    view = View(Item('mensaje',style='readonly',show_label=False), title="ERROR", buttons=['OK'])
-
-
     
 class Ventana(HasTraits):
     desde = Date(date.today())
@@ -55,13 +51,15 @@ class Ventana(HasTraits):
         
         
         if hasta < desde:
-            Error(mensaje='Hasta debe ser posterior a desde').edit_traits()
+            error=MessageDialog(message='Hasta debe ser posterior a desde',severity='error',title='Error')
+            error.open()
             return
-        seleccionados = [x for x in self.scripts if x.seleccionado]
-        
+        seleccionados = (x for x in self.scripts if x.seleccionado)
         progress = ProgressDialog(title="Progreso", message="Generando reportes",
                               max=len(seleccionados)+1, show_time=True, can_cancel=True)
         progress.open()
+        dire = tempfile.mkdtemp(suffix='reporTool', prefix='')
+        
         res =""
         i = 1
         for each in seleccionados:
@@ -81,6 +79,7 @@ class Ventana(HasTraits):
         f.write(convert(unicode(documento%res), 'latex', 'pdf'))
         f.close()
         progress.update(len(seleccionados)+1)
+        del res
     
     def _scripts_changed(self,name,old,new):
         lista = self.scripts

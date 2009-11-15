@@ -16,7 +16,7 @@ from reporte import Reporte
 from horarioLaboral import FueraDeHorario
 from blackList import ListaNegra
 from ajax import Ajax
-
+from contentType import ContentType
 
 
 class Configurador(HasTraits):
@@ -140,7 +140,9 @@ l4 = ListaNegra(categoria = 'Apuestas', lista ='./bl/timba.list',directorio=dire
 c6 = Configurador(script = l4, nombre='Apuestas', descripciones = "Informa sobre el uso de sitios de apuestas")
 l5 = ListaNegra(categoria = 'spyware', lista ='./bl/spyware.list',directorio=directorio)
 c7 = Configurador(script = l5, nombre='spyware', descripciones = "Informa sobre el uso de sitios conocidos por introducir spyware")
-v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7],desde = date(2000,1,1), hasta = date(2100,1,1))
+ct = ContentType()
+c8 = Configurador(script = ct, nombre = "Tipo de trafico", descripcion = "Muestra el tipo de trafico en la red")
+v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8],desde = date(2000,1,1), hasta = date(2100,1,1))
 
 
 s.close()

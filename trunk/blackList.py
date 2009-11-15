@@ -20,7 +20,7 @@ import tempfile
 
 class ListaNegra(Reporte):
     dicc = None
-    render = Instance(LatexFactory)
+    render = LatexFactory
     categoria = Str
     lista = File
     plotInfraccionesPorUsuario = Bool(True)
@@ -31,7 +31,7 @@ class ListaNegra(Reporte):
     plotPorcentajeDeTrafico = Bool(True)
     verbose = Bool(False)
     directorio = None
-    forzarRecarga = Bool(False)
+
     
     
         
@@ -47,9 +47,7 @@ class ListaNegra(Reporte):
 
         
     def cargarLista(self):
-        
-        if (not self.forzarRecarga) and self.dicc != None:
-            return
+       
         try:
             f = open(self.lista,'r')
         except Exception, e:
@@ -59,6 +57,7 @@ class ListaNegra(Reporte):
         lineas = f.readlines()
       
         self.dicc = set((unicode(x[:-1]) for x in lineas))
+        f.close()
 
         
             
@@ -147,8 +146,10 @@ class ListaNegra(Reporte):
             self.plotearDominiosVisitadosPorUsuario(infractores,dominiosVisitadosPorUsuario,visitasPorUsuario)
             self.plotearDominiosVistados(dominiosVisitados, visitasADominios,visitasTotales,desde,hasta)
             self.plotearTrafico(requestsInfractores,dominiosVisitados,desde,hasta,dominiosXHeader)
- 
-            return self.render.generarOutput()
+            s = self.render.generarOutput()
+            del self.render
+            return s
+            
     
     
     def plotearInfraccionesPorUsuario(self,infractores,infracciones,totales):

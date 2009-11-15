@@ -4,16 +4,16 @@ from enthought.traits.api import *
 from enthought.traits.ui.api import *
 from reporte import Reporte
 import CairoPlot
+import plot
 from collections import defaultdict
-import os
 from enthought.pyface.message_dialog import MessageDialog
 from enthought.pyface.progress_dialog import ProgressDialog
 from enthought.traits.ui.menu import OKButton, CancelButton
 from latex import LatexFactory
 
-import psyco
+#import psyco
 import tempfile
-psyco.full()
+#psyco.full()
 
 #TODO: un poco de refactor no vendria mal
 
@@ -31,6 +31,7 @@ class ListaNegra(Reporte):
     plotPorcentajeDeTrafico = Bool(True)
     verbose = Bool(False)
     directorio = None
+    forzarRecarga = Bool(False)
     
     
         
@@ -46,14 +47,14 @@ class ListaNegra(Reporte):
 
         
     def cargarLista(self):
-        if self.dicc != None:
+        
+        if (not self.forzarRecarga) and self.dicc != None:
             return
         try:
             f = open(self.lista,'r')
         except Exception, e:
             MessageDialog(message="Imposible cargar el reporte a partir del archivo").open()
             raise e
-        #self.dicc = Trie()
         
         lineas = f.readlines()
       
@@ -202,7 +203,7 @@ class ListaNegra(Reporte):
         self.render.itemize(d, 'requests')
         if self.plotDominiosVistadosPorUsuario:
             nombre = self.directorio + "/dominios_%s_%s.png" % (self.categoria.replace(' ',''),usr.replace('.',''))
-            CairoPlot.pie_plot(nombre,d, 1000,500,gradient=True,
+            plot.pie_plot(nombre,d, 1000,500,gradient=True,
                 shadow=True
                )
             self.render.figure(nombre, caption = \
@@ -228,7 +229,7 @@ class ListaNegra(Reporte):
         
         if self.plotPorcentajePorUsuario:
             nombre = self.directorio +"/porcentaje_%s_%s.png" % (self.categoria.replace(' ',''),usr.replace('.',''))
-            CairoPlot.pie_plot(nombre,d, 800,500,shadow=True,gradient=True)
+            plot.pie_plot(nombre,d, 800,500,shadow=True,gradient=True)
 
             self.render.figure(nombre, caption = \
                            'Porcentaje de requests infractoras para %s, categoria %s(total de requests: %s)'\
@@ -244,7 +245,7 @@ class ListaNegra(Reporte):
         self.render.itemize(d1,'requests')                    
         if self.plotPorcentajeDeRequests:
             nombre = self.directorio + "/porcentaje_%s.png" % self.categoria.replace(' ','')
-            CairoPlot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
+            plot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
             self.render.figure(nombre, caption = \
                           'Porcentaje de requests infractoras categoria %s (total de requests: %s)'\
                            %(self.categoria,total))
@@ -274,7 +275,7 @@ class ListaNegra(Reporte):
         self.render.itemize(d, 'requests')
         if self.plotDominiosVistados:
             nombre = self.directorio +"/Dominios_visitados_%s.png" % self.categoria.replace(' ', '')
-            CairoPlot.pie_plot(nombre,d, 1000,500,gradient=True,
+            plot.pie_plot(nombre,d, 1000,500,gradient=True,
                 shadow=True
                )
             self.render.figure(nombre, caption = \
@@ -330,6 +331,6 @@ class ListaNegra(Reporte):
         self.render.itemize(d,'bytes')
         if self.plotPorcentajeDeTrafico:
             nombre = self.directorio + "/trafico_%s.png" % self.categoria.replace(' ','')
-            CairoPlot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
+            plot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
             self.render.figure(nombre, caption =' Porcentaje del trafico en infraccion para la categoria %s (total de trafico: %s bytes)'%(self.categoria,traficoTotal))
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from persistencia import get_session, RequestHTTP
+from sqlalchemy import text
+from persistencia import MensajeHTTP, RequestHTTP, ResponseHTTP, get_session, engine
 from datetime import datetime,date
 from enthought.traits.api import *
 from enthought.traits.ui.api import *
@@ -35,7 +36,9 @@ class Configurador(HasTraits):
                 Item('configurar',editor=ButtonEditor(),show_label=False),
                 Item('seleccionado'))
 
-
+class Shell(HasTraits):
+    h=PythonValue
+    view = View(Item('h',editor=ShellEditor(),show_label=False),resizable=True)
     
 class Ventana(HasTraits):
     desde = Date(date.today())
@@ -43,6 +46,12 @@ class Ventana(HasTraits):
     scripts = List(Configurador)
     generarReporte = Button(label='Generar')
     salida = File('fede.pdf')
+    ingresarComandos = Button(label='Modo interactivo')
+    
+    def _ingresarComandos_fired(self):
+
+        Shell().edit_traits()
+        
     
     
     def _generarReporte_fired(self):
@@ -54,7 +63,7 @@ class Ventana(HasTraits):
             error=MessageDialog(message='Hasta debe ser posterior a desde',severity='error',title='Error')
             error.open()
             return
-        seleccionados = (x for x in self.scripts if x.seleccionado)
+        seleccionados = [x for x in self.scripts if x.seleccionado]
         progress = ProgressDialog(title="Progreso", message="Generando reportes",
                               max=len(seleccionados)+1, show_time=True, can_cancel=True)
         progress.open()
@@ -103,11 +112,17 @@ class Ventana(HasTraits):
         
     view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), Item('salida', editor=FileEditor(), style='text'),
             Item('scripts',editor=ListEditor(style='custom'),resizable=True,show_label=False),
-            Item('generarReporte'),
+            Item('generarReporte'), 'ingresarComandos',
             resizable=True,
             title="ReporTool",
              )
-    
+
+from enthought.pyface.splash_screen import SplashScreen
+from enthought.pyface.image_resource import ImageResource
+image = ImageResource('splash.png')
+s = SplashScreen()
+s.image = image
+s.open()    
 directorio = tempfile.mkdtemp(suffix='', prefix='reporTool')
 f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
@@ -127,6 +142,8 @@ l5 = ListaNegra(categoria = 'spyware', lista ='./bl/spyware.list',directorio=dir
 c7 = Configurador(script = l5, nombre='spyware', descripciones = "Informa sobre el uso de sitios conocidos por introducir spyware")
 v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7],desde = date(2000,1,1), hasta = date(2100,1,1))
 
+
+s.close()
 v.configure_traits()
 for filename in os.listdir(directorio):
      os.remove(os.path.join(directorio, filename))

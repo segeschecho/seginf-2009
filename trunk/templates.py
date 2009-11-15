@@ -14,7 +14,6 @@ documento = """
 \\usepackage{amsfonts}
 \\usepackage{ulem}
 \\usepackage{marvosym}
-\\usepackage{subfigure}
 \\usepackage{colortbl}
 
 \\parskip    = 11 pt
@@ -31,7 +30,10 @@ documento = """
 
 
 \\begin{document}
+\\title{Informe sobre el uso de internet}
+\\author{ReporTool}
 
+\maketitle
 \\renewcommand{\\chaptername}{Parte }
 
 \\pagestyle{empty}

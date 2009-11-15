@@ -82,11 +82,26 @@ class Ventana(HasTraits):
         fe.write(unicode(documento%res))
         fe.close()
         
-        if self.salida[-4:] != '.pdf':
-            self.salida = self.salida + '.pdf'
-        f = open(self.salida,'w')
-        f.write(convert(unicode(documento%res), 'latex', 'pdf'))
-        f.close()
+        if self.formato in ('ambos','pdf'):
+            if self.salida[-4:] != '.pdf':
+                self.salida = self.salida + '.pdf'
+            f = open(self.salida,'w')
+            f.write(convert(unicode(documento%res), 'latex', 'pdf'))
+            f.close()
+
+        if self.formato in ('html','ambos'):
+            from plasTeX.TeX import TeX
+            from plasTeX.Renderers.XHTML import Renderer
+            tex =TeX()
+            tex.input(documento%res)
+            outdir='reporte'
+            dire = os.getcwdu()
+            if not os.path.isdir(outdir):
+               os.makedirs(outdir)
+            os.chdir(outdir)
+            r = Renderer()
+            r.render(tex.parse())
+            os.chdir(dire)
         progress.update(len(seleccionados)+1)
         del res
     
@@ -109,20 +124,15 @@ class Ventana(HasTraits):
                     MessageDialog(message="Imposible cargar el reporte a partir del archivo").open()
                     del lista[each]
         return
-        
-    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), Item('salida', editor=FileEditor(), style='text'),
+    formato = Enum(['pdf','html','ambos'])
+    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), 'formato',Item('salida', editor=FileEditor(), style='text'),
             Item('scripts',editor=ListEditor(style='custom'),resizable=True,show_label=False),
             Item('generarReporte'), 'ingresarComandos',
             resizable=True,
             title="ReporTool",
              )
 
-from enthought.pyface.splash_screen import SplashScreen
-from enthought.pyface.image_resource import ImageResource
-image = ImageResource('splash.png')
-s = SplashScreen()
-s.image = image
-s.open()    
+
 directorio = tempfile.mkdtemp(suffix='', prefix='reporTool')
 f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
@@ -144,8 +154,6 @@ ct = ContentType()
 c8 = Configurador(script = ct, nombre = "Tipo de trafico", descripcion = "Muestra el tipo de trafico en la red")
 v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8],desde = date(2000,1,1), hasta = date(2100,1,1))
 
-
-s.close()
 v.configure_traits()
 for filename in os.listdir(directorio):
      os.remove(os.path.join(directorio, filename))

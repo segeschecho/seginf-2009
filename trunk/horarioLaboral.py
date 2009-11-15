@@ -20,7 +20,8 @@ class FueraDeHorario(Reporte):
     horario_entrada = Range(value=8,low=0,high=23)
     horario_salida = Range(value=17,low=0,high=23)
     dias = List()
-    render = LatexFactory()
+    render = Instance(LatexFactory)
+    
     
     def _dias_default(self):
         return range(5)
@@ -97,6 +98,7 @@ class FueraDeHorario(Reporte):
             self.render.figure('%s/FueraDeHorario_usuarios.png'%os.getcwdu(),caption=\
                            'Cantidad de accesos de los usuarios infractores (sobre un total de %s pedidos)'\
                            %len(infractores))
+        self.render.nuevaPagina()
         
                        
     def graficarHorarios(self,desde,hasta):
@@ -143,6 +145,7 @@ class FueraDeHorario(Reporte):
         
     
     def ejecutar(self,desde,hasta):
+        self.render = LatexFactory()
         infractores = self.obtenerInfractores(desde,hasta)
         self.render.chapter("Uso de internet fuera del horario laboral")
             

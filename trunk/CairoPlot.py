@@ -698,7 +698,7 @@ class PiePlot(Plot):
         Plot.__init__(self, surface, data, width, height, background, series_colors = series_colors)
         self.center = (self.width/2, self.height/2)
         self.total = sum(self.data)
-        self.radius = min(self.width/3,self.height/3)
+        self.radius = min(self.width/3.5,self.height/3.5)
         self.gradient = gradient
         self.shadow = shadow
 
@@ -728,7 +728,7 @@ class PiePlot(Plot):
         self.context.fill()
 
     def render_series_labels(self):
-        self.context.set_font_size(self.font_size * 0.8)
+        self.context.set_font_size(self.font_size * 0.7)
         angle = 0
         next_angle = 0
         x0,y0 = self.center

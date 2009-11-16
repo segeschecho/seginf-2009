@@ -94,10 +94,11 @@ class Ventana(HasTraits):
             from plasTeX.Renderers.XHTML import Renderer
             tex =TeX()
             tex.input(documento%res)
-            outdir='reporte'
+            outdir='informe'
             dire = os.getcwdu()
             if not os.path.isdir(outdir):
                os.makedirs(outdir)
+     
             os.chdir(outdir)
             r = Renderer()
             r.render(tex.parse())

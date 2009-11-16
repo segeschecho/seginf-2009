@@ -43,32 +43,111 @@ class Ajax(Reporte):
         return (requestsAll, responsesAll)
 
 
-    def subreporteTrafico(self,requests,responses,responsesAjax,requestsAjax):
+    def subReporteTrafico(self,requests,responses,responsesAjax,requestsAjax):
         #Calculo el trafico total en bytes sumando los bodys
         trafico = sum((len(x.body) for x in requests)) + \
                   sum((len(x.body) for x in responses))
-        #Calculo el trafico ajax
-        traficoAjax = sum((len(x.body) for x in requestsAjax)) + \
-                      sum((len(x.body) for x in responsesAjax))
+        
+        #Trafico ajax
+        traficoAjax = 0
 
         #Comienzo a escribir la seccion del reporte
         seccion = LatexFactory()
+
+        #diccionario de usuarios, que contendran el trafico usado
+        diccUsuarios = {}
+        diccDominios = {}
+        
+        #genero los datos que despues voy a mostrar en el informe
+        for each in requestsAjax:
+            #sumo el trafico ajax
+            traficoAjax += len(each.body)
+            
+            #recorro todos los responses y genero un diccionario con los usuarios            
+            usuario = each.ipOrigen
+            dominio = each.host
+            id = each.id
+            
+            #si el usuario ya estaba en el dicc sumo lo que uso
+            if usuario in diccUsuarios.keys():
+                diccUsuarios[usuario] += len(each.body)
+            #sino agrego al usuario al diccionario
+            else:
+                diccUsuarios[usuario] = len(each.body)
+                        
+            #si el dominio ya estaba en el dicc sumo lo que uso
+            if id in diccDominios.keys():
+                diccDominios[id][1] += len(each.body)
+            else:
+                diccDominios[id] = (dominio, len(each.body))
+            
+            
+        
+        for each in responsesAjax:
+            #sigo sumando el trafico ajax
+            traficoAjax += len(each.body)
+            
+            #recorro todos los request y genero un diccionario con los usuarios            
+            usuario = each.ipDestino
+            id = each.id
+            
+            #si el usuario ya estaba en el dicc sumo lo que uso
+            if usuario in diccUsuarios.keys():
+                diccUsuarios[usuario] += len(each.body)
+            #sino agrego al usuario al diccionario
+            else:
+                diccUsuarios[usuario] = len(each.body)
+            
+            #sumo los body de las respuestas a las peticiones ajax
+            if id in diccDominios.keys():
+                diccDominios[id][1] += len(each.body)
+
+
 
         #Titulo de la seccion
         seccion.section("Trafico de tipo Ajax")
 
         #Estadisticas de trafico
         seccion.texto("Estadisticas:")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico Ajax':str(traficoAjax)})
+        seccion.texto("En la siguiente informaci'on se mostrar'a el trafico total en bytes \
+                      y el trafico de tipo ajax, tambi'en en bytes. Estos valores pueden ser \
+                      muy utiles a la hora de tener una idea general de cuanto es el tr'afico \
+                      din'amico dentro de la red.")
+        seccion.itemize({'Trafico Total':str(trafico), 'Trafico Ajax':str(traficoAjax)}, "Bytes")
 
-        #Si se quiso hacer un grafico en el reporte lo hago
+        #Si se quiso hacer un grafico del trafico ajax
         if self.plotTrafico:
             d = {'Trafico Ajax': traficoAjax, 'Trafico no Ajax': trafico - traficoAjax}
             archivoSalida = "traficoAjax.png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
 
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida)
+            seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
+            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+                           con respecto al total.")
 
+        #Si se quiso hacer un grafico por usuario
+        if self.plotPorUsuario:
+            
+            #muestro los usuarios y sus gastos.
+            seccion.texto("En esta parte se mostrara el trafico ajax por usuarios.")
+            seccion.itemize(diccUsuarios, "Bytes")
+                        
+        #Si se quiso hacer un grafico por dominio
+        
+        if self.plotPorDominios:
+            
+            #muestro los dominios
+            texto = ""
+            texto = "\\begin{itemize}\n"
+            for each in diccDominios:              
+                texto += "\\item %s: %s %s\n"%(str(diccDominios[each][0]), \
+                                               str(diccDominios[each][1]), \
+                                                "Bytes")
+            texto += "\\end{itemize}\n"
+            
+            seccion.texto(texto)
+            
+        
         return seccion.generarOutput()
        
         
@@ -99,7 +178,7 @@ class Ajax(Reporte):
 
         #comienzo a generar el reporte        
         res = "\\chapter{Trafico utilizando Ajax}\n"
-        res += self.subreporteTrafico(requests,responses,responsesAjax,requestsAjax)
+        res += self.subReporteTrafico(requests,responses,responsesAjax,requestsAjax)
 
 
         print res

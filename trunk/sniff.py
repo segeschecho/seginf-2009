@@ -2,6 +2,7 @@
 
 from scapy.all import *
 from dpkt.http import Request, Response
+from dpkt import NeedData, UnpackError
 
 from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, RequestNoHTTP, ResponseNoHTTP
 import sys
@@ -66,7 +67,6 @@ class PersistidorHTTP(object):
             ipOrigen, ipDestino, portOrigen, portDestino = cuadrupla
             
             if arg2 is None:
-                print "aca tb llego"
                 s.add(clase(ipOrigen, ipDestino, portOrigen, portDestino, mensaje.version,
                               mensaje.headers,mensaje.body, timestamp,arg0,arg1))
             else:
@@ -77,7 +77,7 @@ class PersistidorHTTP(object):
             self.ultimoId +=1
         except Exception, e:
             print e
-            sys.exit(-1)
+            
       
             
 
@@ -164,15 +164,16 @@ class ConexionPotencialmenteNoHTTP(object):
         if not self.conBody:
             return True
         elif self.seQueNoEs:
-            return seQueNoEs
+            return self.seQueNoEs
         elif self.seQueNoEs == None:
             self.seQueNoEs = not (self.identificadorHTTP._comienzoDeRequest(self.body) \
                              or self.identificadorHTTP._comienzoDeResponse(self.body))
-        return seQueNoEs
+        return self.seQueNoEs
             
 
     def agregarPaquete(self,chunk):
         self.body += chunk.load
+        self.conBody = True
             
     
 class PersistidorNoHTTP(object):
@@ -212,29 +213,45 @@ class NoHTTPAssembler(object):
         portDestino = pktTCP.dport
         return (ipOrigen,ipDestino,portOrigen,portDestino)
         
+    def agregarConexion(self,cuadrupla):
+        self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
+
+    #FIXME: hay q agarrar las cosas luego de un connect!    
     def nuevoPaquete(self,pkt):
         #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
         if self.ultimoPaquete == pkt:
             return
         self.ultimoPaquete = pkt 
         cuadrupla = self._get_cuadrupla(pkt)
-        if pkt.getlayer(TCP).flags & 2 > 0: #flag de syn
-            self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
+
+        #    self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
         if cuadrupla in self.conexiones:
+
             if pkt.lastlayer().haslayer(Raw):
+                if not self.conexiones[cuadrupla].conBody and cuadrupla[3] == self.port:
+                    desti,ori,des,org = cuadrupla
+                    cuadrupla2 = (ori,desti,org,des)
+                    self.conexiones[cuadrupla2] = ConexionPotencialmenteNoHTTP(cuadrupla2)
                 self.conexiones[cuadrupla].agregarPaquete(pkt.getlayer(Raw))
                 if not self.conexiones[cuadrupla].noEsHTTP():
+                    
                     del self.conexiones[cuadrupla]
                     return
             if (pkt.getlayer(TCP).flags & 1) > 0: #flag de fin    
                 self.persistidorNoHTTP.persistir(self.conexiones[cuadrupla])
-                del self.conexiones[cuadrupla]
-                return
-            if (pkt.getlayer(TCP).flags & 4) > 0: #flag de reset    
-                del self.conexiones[cuadrupla]
-                return
 
-        
+                del self.conexiones[cuadrupla]
+                return
+            if (pkt.getlayer(TCP).flags & 4) > 0: #flag de reset
+                if self.conexiones[cuadrupla].conBody:
+                    self.persistidorNoHTTP.persistir(self.conexiones[cuadrupla])
+                del self.conexiones[cuadrupla]
+
+
+    def persistirTodo(self):
+        for cuadrupla in self.conexiones:
+            if self.conexiones[cuadrupla].conBody:
+                self.persistidorNoHTTP.persistir(self.conexiones[cuadrupla])
         
             
             
@@ -243,7 +260,7 @@ class HTTPAssembler(object):
     
 
 
-    def __init__(self,port=STANDARD_PORT):
+    def __init__(self,noHTTP,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
         self.port = port
         
@@ -253,6 +270,7 @@ class HTTPAssembler(object):
         self.ultimoPaquete = None
         
         self.identificadorHTTP = IdentificadorDeHTTP()
+        self.noHTTP = noHTTP
     
         
         
@@ -315,11 +333,13 @@ class HTTPAssembler(object):
                 self.conversaciones[cuadrupla].request = r
                 self.conversaciones[cuadrupla].datetimeRequest = timestamp
                 self.conversaciones[cuadrupla].cuadrupla = cuadrupla
-            
+            if r.method == 'CONNECT':
+                self.noHTTP.agregarConexion(cuadrupla)
+               
+                
 
         except Exception, e:
             #No pude armar el request todavia
-            print e, "pataaaa"
             pass
         
     #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
@@ -330,7 +350,7 @@ class HTTPAssembler(object):
     def response(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
         if not cuadrupla in self.conexiones and not self.identificadorHTTP._comienzoDeResponse(pkt.getlayer(Raw).load):
-            return
+               return
         self._agregarPaquete(pkt)
         try:
             r = Response(self.conexiones[cuadrupla].paquetes)
@@ -354,8 +374,9 @@ class HTTPAssembler(object):
                 c.terminada()
                 
                 
-        except Exception, e:
-            print e, "pitaaaa"
+        except NeedData, e:
+            pass
+        except UnpackError, e:
             pass
             
     def _get_cuadrupla(self,pkt):
@@ -410,8 +431,9 @@ parser.add_option("-v", "--verbose", dest="verbose", default=False, action="stor
 
 puerto = int(options.proxy_port)
 hs = HTTPandHTTPSSniffer(port=puerto)
-ha = HTTPAssembler(port=puerto)
-hs.addCallback(ha.nuevo_paquete)
+hn = NoHTTPAssembler(port = puerto)
+ha = HTTPAssembler(hn,port=puerto)
+hs.addCallback(hn.nuevoPaquete)
 
 if options.dump_file:
     ca = CapDumper(options.dump_file)
@@ -420,8 +442,8 @@ if options.dump_file:
 if options.verbose:
     vph = VerbosePacketHandler()
     hs.addCallback(vph.nuevoPaquete)
-hn = NoHTTPAssembler(port = puerto)
-hs.addCallback(hn.nuevoPaquete)
+
+hs.addCallback(ha.nuevo_paquete)
 hs.sniffear()
 
 if options.dump_file:
@@ -430,6 +452,8 @@ if options.dump_file:
 #vaciamos los requests que quedaron sin respuesta (esto hay q mejorarlo)
 for each in ha.conversaciones:
     ha.conversaciones[each].terminada()
+
+hn.persistirTodo()
 
 
     

@@ -65,8 +65,10 @@ class Ajax(Reporte):
             
             #recorro todos los responses y genero un diccionario con los usuarios            
             usuario = each.ipOrigen
-            dominio = each.host
-            id = each.id
+            #guardo el dominio al cual se hizo el request
+            dominio = each.headers["host"]
+            #guardo el id de las respuestas
+            id = each.response
             
             #si el usuario ya estaba en el dicc sumo lo que uso
             if usuario in diccUsuarios.keys():
@@ -79,9 +81,10 @@ class Ajax(Reporte):
             if id in diccDominios.keys():
                 diccDominios[id][1] += len(each.body)
             else:
-                diccDominios[id] = (dominio, len(each.body))
-            
-            
+                #corto el uri para que me quede solo el dominio
+                #posicion despues del http:// o https:// es 8
+                #domAux = dominio[0 : dominio.find("/", 8, len(dominio))]
+                diccDominios[id] = [dominio, len(each.body)]
         
         for each in responsesAjax:
             #sigo sumando el trafico ajax
@@ -117,6 +120,7 @@ class Ajax(Reporte):
 
         #Si se quiso hacer un grafico del trafico ajax
         if self.plotTrafico:
+            #hago el grafico para el trafico
             d = {'Trafico Ajax': traficoAjax, 'Trafico no Ajax': trafico - traficoAjax}
             archivoSalida = "traficoAjax.png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
@@ -131,21 +135,39 @@ class Ajax(Reporte):
             #muestro los usuarios y sus gastos.
             seccion.texto("En esta parte se mostrara el trafico ajax por usuarios.")
             seccion.itemize(diccUsuarios, "Bytes")
+            
+            #hago el grafico para los usuarios
+            archivoSalida = "traficoAjaxUsuarios.png"
+            CairoPlot.pie_plot(archivoSalida, diccUsuarios, 800, 500, shadow = True, gradient = True)
+            
+            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+                           utilizado por cada usuario.")
                         
         #Si se quiso hacer un grafico por dominio
         
         if self.plotPorDominios:
+            #diccionario para el grafico
+            diccFigura = {}
             
             #muestro los dominios
+            seccion.texto("En los siguientes puntos se mostrar'a el trafico a los diferentes dominios.")
             texto = ""
             texto = "\\begin{itemize}\n"
             for each in diccDominios:              
                 texto += "\\item %s: %s %s\n"%(str(diccDominios[each][0]), \
                                                str(diccDominios[each][1]), \
                                                 "Bytes")
+                #creo un diccionario(dominio, trafico) para graficar
+                diccFigura[diccDominios[each][0]] = diccDominios[each][1]
             texto += "\\end{itemize}\n"
             
             seccion.texto(texto)
+            
+            #hago el grafico para los dominios
+            archivoSalida = "traficoAjaxDominio.png"
+            CairoPlot.pie_plot(archivoSalida, diccFigura, 800, 500, shadow = True, gradient = True)
+            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+                           a cada dominio.")
             
         
         return seccion.generarOutput()

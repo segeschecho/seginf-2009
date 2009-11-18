@@ -8,6 +8,7 @@ from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Re
 import sys
 import cStringIO
 import datetime
+#TODO: permitir capturar a partir de un cap
 
 STANDARD_PORT = 8080
 DEFAULT_CAP ='captura.cap'
@@ -30,8 +31,22 @@ class Sniffer(object):
     def callCallbacks(self,pkt):
         for each in self.callbacks:
             each(pkt)
-            
 
+class fromFileHTTPSniffer(Sniffer):
+    def __init__(self,capfile,port=STANDARD_PORT):
+        self.callbacks=[]
+        self.port = port
+        
+        paquetes = rdpcap(capfile)
+ 
+        self.paquetes = paquetes.filter(lambda paq:\
+                        paq.haslayer(TCP) and (paq.getlayer(TCP).dport == self.port or \
+                        paq.getlayer(TCP).sport == self.port))
+            
+    def sniffear(self):
+        for pkt in self.paquetes:
+            self.callCallbacks(pkt)
+    
 # Clase que permite sniffear trafico tcp al puerto donde atiende el proxy
 class HTTPandHTTPSSniffer(Sniffer):
     def __init__(self,port=STANDARD_PORT):
@@ -420,6 +435,8 @@ parser.add_option("-d", "--dump", dest="dump_file",
                   help="Generar un archivo con las capturas", metavar="DUMP")
 parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true",
                   help="mostrar informacion adicional")
+parser.add_option("-f", "--from-file", dest="from_file",
+                  help="No sniffear sino cargar un .cap",metavar="FILE")
 
 
 
@@ -429,8 +446,19 @@ parser.add_option("-v", "--verbose", dest="verbose", default=False, action="stor
 
 (options, args) = parser.parse_args()
 
+    
 puerto = int(options.proxy_port)
-hs = HTTPandHTTPSSniffer(port=puerto)
+
+if options.from_file:
+    try:
+        hs = fromFileHTTPSniffer(options.from_file,port=puerto)
+    except:
+        print "imposible abrir el archivo %s"%options.from_file
+        sys.exit(-1)
+else:
+    hs = HTTPandHTTPSSniffer(port=puerto)       
+
+
 hn = NoHTTPAssembler(port = puerto)
 ha = HTTPAssembler(hn,port=puerto)
 hs.addCallback(hn.nuevoPaquete)

@@ -65,7 +65,7 @@ class Ventana(HasTraits):
             return
         seleccionados = [x for x in self.scripts if x.seleccionado]
         progress = ProgressDialog(title="Progreso", message="Generando reportes",
-                              max=len(seleccionados)+1, show_time=True, can_cancel=True)
+                              max=len(seleccionados)+3, show_time=True, can_cancel=True)
         progress.open()
         dire = tempfile.mkdtemp(suffix='reporTool', prefix='')
         
@@ -74,7 +74,9 @@ class Ventana(HasTraits):
         for each in seleccionados:
                 print each.nombre
                 res += each.ejecutar(desde,hasta)
-                progress.update(i)
+                (cont, skip) = progress.update(i)
+                if not cont or skip:
+                    return
                 i +=1
                 
         #DEBUG        
@@ -98,12 +100,12 @@ class Ventana(HasTraits):
             dire = os.getcwdu()
             if not os.path.isdir(outdir):
                os.makedirs(outdir)
-     
+        
             os.chdir(outdir)
             r = Renderer()
             r.render(tex.parse())
             os.chdir(dire)
-        progress.update(len(seleccionados)+1)
+        progress.update(len(seleccionados)+3)
         del res
     
     def _scripts_changed(self,name,old,new):

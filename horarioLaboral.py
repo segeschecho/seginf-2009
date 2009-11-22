@@ -46,26 +46,16 @@ class FueraDeHorario(Reporte):
     
     
     def obtenerInfractores(self,desde,hasta):
-        s = get_session()
 
-        l = s.query(RequestHTTP).all()
+        l = self.obtenerRequests(desde,hasta)
         res = []
         for each in l:
-            if desde < date(each.datetime.year,each.datetime.month,each.datetime.day) < hasta:
                 if each.datetime.weekday() not in self.dias:
                     res.append(each)
                 elif not (self.horario_entrada <= each.datetime.hour <= self.horario_salida):
                     res.append(each)
         return res
     
-    def obtenerPedidos(self,desde,hasta):
-        s = get_session()
-        res = []
-        l = s.query(RequestHTTP).all()
-        for each in l:
-            if desde < date(each.datetime.year,each.datetime.month,each.datetime.day) < hasta:
-                res.append(each)
-        return res
         
     def graficarUsuarios(self,desde,hasta,infractores):
         if infractores == []:
@@ -104,7 +94,7 @@ class FueraDeHorario(Reporte):
     def graficarHorarios(self,desde,hasta):
         horas = range(24)
         cant = dict(((x,0) for x in range(24)))
-        pedidos = self.obtenerPedidos(desde,hasta)
+        pedidos = self.obtenerRequests(desde,hasta)
         if pedidos == []:
             return ""
         for each in pedidos:

@@ -26,21 +26,7 @@ class Ajax(Reporte):
                  unicode('application/x-javascript')]
     
     
-    def _obtenerTodoEnRango(self,d,h):
-        #obtengo la sesion a la base de datos
-        s = get_session()
-        #filtro los requests por fecha
-        query = s.query(RequestHTTP)
-        query.filter(RequestHTTP.datetime >= str(d) )
-        query.filter(RequestHTTP.datetime <= str(h) )
-        requestsAll = query.all()
-        #filtro los responses por fecha
-        query = s.query(ResponseHTTP)
-        query.filter(ResponseHTTP.datetime >= str(d) )
-        query.filter(ResponseHTTP.datetime <= str(h) )
-        responsesAll = query.all()
 
-        return (requestsAll, responsesAll)
 
 
     def subReporteTrafico(self,requests,responses,responsesAjax,requestsAjax):
@@ -70,7 +56,7 @@ class Ajax(Reporte):
             #guardo el id de las respuestas
             id = each.response
             
-            #si el usuario ya estaba en el dicc sumo lo que uso
+            #si el usuario yad estaba en el dicc sumo lo que uso
             if usuario in diccUsuarios.keys():
                 diccUsuarios[usuario] += len(each.body)
             #sino agrego al usuario al diccionario
@@ -84,6 +70,7 @@ class Ajax(Reporte):
                 #corto el uri para que me quede solo el dominio
                 #posicion despues del http:// o https:// es 8
                 #domAux = dominio[0 : dominio.find("/", 8, len(dominio))]
+                #FIXME: no hay que sacar ademas lo que esta adelante del primer punto?
                 diccDominios[id] = [dominio, len(each.body)]
         
         for each in responsesAjax:

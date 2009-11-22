@@ -61,14 +61,7 @@ class ListaNegra(Reporte):
 
         
             
-    def obtenerRequests(self,desde,hasta):
-        s = get_session()
-        d = datetime(desde.year,desde.month,desde.day)
-        h = datetime(hasta.year,hasta.month,hasta.day)
-        query = s.query(RequestHTTP)
-        query.filter(RequestHTTP.datetime >= str(d) )
-        query.filter(RequestHTTP.datetime <= str(h) )
-        return query.all()
+
         
     
     def esta(self,nombre):
@@ -134,6 +127,8 @@ class ListaNegra(Reporte):
                 if self.verbose:
                     self.render.texto("\\item No hubo accesos a sitios de esta categoria\n")
                     self.render.texto("\\end{itemize}\n")
+                else:
+                    self.render.texto("No hubo accesos a sitios de esta categoria\n")
                 return self.render.generarOutput()
             if self.verbose:               
                 self.render.texto("\\end{itemize}\n")
@@ -141,6 +136,7 @@ class ListaNegra(Reporte):
             del self.dicc
             
             self.plotearPorcentaje(len(requests), visitasTotales,desde,hasta)
+            del requests
             self.plotearPorcentajePorUsuario(infractores, infracciones, requestsPorUsuarios)
             self.plotearInfraccionesPorUsuario(infractores,infracciones,visitasTotales)
             self.plotearDominiosVisitadosPorUsuario(infractores,dominiosVisitadosPorUsuario,visitasPorUsuario)
@@ -286,19 +282,11 @@ class ListaNegra(Reporte):
 
 
         
-        
-    def _obtenerTodoEnRango(self,d,h):
-        s = get_session()
-        query = s.query(RequestHTTP)
-        query.filter(RequestHTTP.datetime >= str(d) )
-        query.filter(RequestHTTP.datetime <= str(h) )
-        requestsAll = query.all()
-        query = s.query(ResponseHTTP)
-        query.filter(ResponseHTTP.datetime >= str(d) )
-        query.filter(ResponseHTTP.datetime <= str(h) )
-        responsesAll = query.all()
-        return (requestsAll, responsesAll)
-        
+    def calcularLargoDeLosHeaders(self,headers):
+        res =0
+        for nombre,valor in headers.iteritems():
+            res += len(nombre) + len(valor)
+        return res
     
     def plotearTrafico(self, requests,dominios,desde,hasta,dominiosXHeader):
         requestAll, responseAll = self._obtenerTodoEnRango(desde,hasta)
@@ -307,8 +295,8 @@ class ListaNegra(Reporte):
         traficoTotal = 0
         traficoInfraccion = defaultdict(lambda:0)
         for each in requestAll:
-            traficoReq = len(each.body)
-            traficoResp = len(responses[each.response].body) \
+            traficoReq = len(each.body) + self.calcularLargoDeLosHeaders(each.headers)
+            traficoResp = len(responses[each.response].body) + self.calcularLargoDeLosHeaders(responses[each.response].headers) \
                           if each.response in responses else 0
             traficoTotal += traficoReq
             traficoTotal += traficoResp

@@ -71,14 +71,19 @@ class Ventana(HasTraits):
         
         res =""
         i = 1
+
+
         for each in seleccionados:
                 print each.nombre
+   
                 res += each.ejecutar(desde,hasta)
+
                 (cont, skip) = progress.update(i)
                 if not cont or skip:
                     return
                 i +=1
-                
+
+
         #DEBUG        
         fe = open('fede.tex','w')
         fe.write(unicode(documento%res))
@@ -135,7 +140,7 @@ class Ventana(HasTraits):
             title="ReporTool",
              )
 
-
+ 
 directorio = tempfile.mkdtemp(suffix='', prefix='reporTool')
 f = FueraDeHorario()
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")

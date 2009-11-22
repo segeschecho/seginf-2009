@@ -73,21 +73,6 @@ class ContentType(Reporte):
                         unicode('video/msvideo')]
    
    
-    def _obtenerTodoEnRango(self,d,h):
-        #obtengo la sesion a la base de datos
-        s = get_session()
-        #filtro los requests por fecha
-        query = s.query(RequestHTTP)
-        query.filter(RequestHTTP.datetime >= str(d) )
-        query.filter(RequestHTTP.datetime <= str(h) )
-        requestsAll = query.all()
-        #filtro los responses por fecha
-        query = s.query(ResponseHTTP)
-        query.filter(ResponseHTTP.datetime >= str(d) )
-        query.filter(ResponseHTTP.datetime <= str(h) )
-        responsesAll = query.all()
-
-        return (requestsAll, responsesAll)
         
     ########################################################################################################################
 

@@ -25,7 +25,8 @@ class Ajax(Reporte):
                  unicode('application/javascript'), \
                  unicode('application/x-javascript')]
     
-    
+    #cantidad de sitios a mostrar en los graficos
+    sitiosTop = 10
 
 
 
@@ -42,7 +43,7 @@ class Ajax(Reporte):
 
         #diccionario de usuarios, que contendran el trafico usado
         diccUsuarios = {}
-        diccDominios = {}
+        diccIds = {}
         
         #genero los datos que despues voy a mostrar en el informe
         for each in requestsAjax:
@@ -56,7 +57,7 @@ class Ajax(Reporte):
             #guardo el id de las respuestas
             id = each.response
             
-            #si el usuario yad estaba en el dicc sumo lo que uso
+            #si el usuario ya estaba en el dicc sumo lo que uso
             if usuario in diccUsuarios.keys():
                 diccUsuarios[usuario] += len(each.body)
             #sino agrego al usuario al diccionario
@@ -64,14 +65,14 @@ class Ajax(Reporte):
                 diccUsuarios[usuario] = len(each.body)
                         
             #si el dominio ya estaba en el dicc sumo lo que uso
-            if id in diccDominios.keys():
-                diccDominios[id][1] += len(each.body)
+            if id in diccIds.keys():
+                diccIds[id][1] += len(each.body)
             else:
                 #corto el uri para que me quede solo el dominio
                 #posicion despues del http:// o https:// es 8
                 #domAux = dominio[0 : dominio.find("/", 8, len(dominio))]
                 #FIXME: no hay que sacar ademas lo que esta adelante del primer punto?
-                diccDominios[id] = [dominio, len(each.body)]
+                diccIds[id] = [dominio, len(each.body)]
         
         for each in responsesAjax:
             #sigo sumando el trafico ajax
@@ -89,10 +90,21 @@ class Ajax(Reporte):
                 diccUsuarios[usuario] = len(each.body)
             
             #sumo los body de las respuestas a las peticiones ajax
-            if id in diccDominios.keys():
-                diccDominios[id][1] += len(each.body)
+            if id in diccIds.keys():
+                diccIds[id][1] += len(each.body)
 
 
+        #creo un diccionario de dominos, (dominio, trafico) para graficar y mostrar
+        diccDominios = {}
+        
+        for each in diccIds:            
+            id = diccIds[each]
+            # si el dominio ya esta, sumo los bytes
+            if id[0] in diccDominios.keys():
+                diccDominios[id[0]] += id[1]
+            else:
+                diccDominios[id[0]] = id[1]
+            
 
         #Titulo de la seccion
         seccion.section("Trafico de tipo Ajax")
@@ -133,26 +145,14 @@ class Ajax(Reporte):
         #Si se quiso hacer un grafico por dominio
         
         if self.plotPorDominios:
-            #diccionario para el grafico
-            diccFigura = {}
-            
+
             #muestro los dominios
             seccion.texto("En los siguientes puntos se mostrar'a el trafico a los diferentes dominios.")
-            texto = ""
-            texto = "\\begin{itemize}\n"
-            for each in diccDominios:              
-                texto += "\\item %s: %s %s\n"%(str(diccDominios[each][0]), \
-                                               str(diccDominios[each][1]), \
-                                                "Bytes")
-                #creo un diccionario(dominio, trafico) para graficar
-                diccFigura[diccDominios[each][0]] = diccDominios[each][1]
-            texto += "\\end{itemize}\n"
-            
-            seccion.texto(texto)
+            seccion.itemize(diccDominios, "Bytes")
             
             #hago el grafico para los dominios
             archivoSalida = "traficoAjaxDominio.png"
-            CairoPlot.pie_plot(archivoSalida, diccFigura, 800, 500, shadow = True, gradient = True)
+            CairoPlot.pie_plot(archivoSalida, diccDominios, 800, 500, shadow = True, gradient = True)
             seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
                            a cada dominio.")
             
@@ -188,9 +188,6 @@ class Ajax(Reporte):
         #comienzo a generar el reporte        
         res = "\\chapter{Trafico utilizando Ajax}\n"
         res += self.subReporteTrafico(requests,responses,responsesAjax,requestsAjax)
-
-
-        print res
 
 
         return res

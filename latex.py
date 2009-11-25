@@ -15,7 +15,7 @@ class LatexFactory(object):
         self.text += "\\chapter{%s}\n"%(nombre)
     
     def figure(self,direccion,caption = None,label = None):
-        self.text += "\\begin{figure}[h]\n"
+        self.text += "\\begin{figure}[htb]\n"
         self.text += "\\centering\n"
         self.text += "\\includegraphics[width=12cm]{%s}\n"%direccion
         if caption != None:

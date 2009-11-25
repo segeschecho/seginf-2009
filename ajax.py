@@ -27,6 +27,8 @@ class Ajax(Reporte):
     
     #cantidad de sitios a mostrar en los graficos
     sitiosTop = 10
+    #cantidad de usuarios a mostrar en los graficos
+    usuariosTop = 10
 
 
 
@@ -53,7 +55,7 @@ class Ajax(Reporte):
             #recorro todos los responses y genero un diccionario con los usuarios            
             usuario = each.ipOrigen
             #guardo el dominio al cual se hizo el request
-            dominio = each.headers["host"]
+            host = each.headers["host"]
             #guardo el id de las respuestas
             id = each.response
             
@@ -72,6 +74,15 @@ class Ajax(Reporte):
                 #posicion despues del http:// o https:// es 8
                 #domAux = dominio[0 : dominio.find("/", 8, len(dominio))]
                 #FIXME: no hay que sacar ademas lo que esta adelante del primer punto?
+                dominio = ""
+                div = host.split(".")
+                #si es de la forma yyy.xxxxxx.com o yyy.xxxxx.net etc
+                if len(div[-2]) > 3:
+                    dominio = host[ host.index(div[-2]) : len(host) ]
+                #sino si es de la forma xxxx.com.zz o xxxx.gob.zz etc
+                else:
+                    dominio = host[ host.index(div[-3]) : len(host) ]
+                    
                 diccIds[id] = [dominio, len(each.body)]
         
         for each in responsesAjax:
@@ -94,7 +105,7 @@ class Ajax(Reporte):
                 diccIds[id][1] += len(each.body)
 
 
-        #creo un diccionario de dominos, (dominio, trafico) para graficar y mostrar
+        #creo un diccionario dominio, (dominio, trafico) para despues graficar
         diccDominios = {}
         
         for each in diccIds:            
@@ -104,16 +115,67 @@ class Ajax(Reporte):
                 diccDominios[id[0]] += id[1]
             else:
                 diccDominios[id[0]] = id[1]
-            
+        
+        del diccIds
 
+        #creo una lista de tuplas(trafico, dominio) para ordenar y hacer el top
+        listTrafico = []
+        
+        for dom in diccDominios:
+            trafico = diccDominios[dom]
+            listTrafico.append((trafico, dom))
+        
+        del diccDominios
+        
+        #ordeno esa lista
+        listTrafico.sort()
+        listTrafico.reverse()
+        
+        #genero los dominios top (dominio, trafico)
+        dominiosTop = {}
+        
+        cantDominiosTop = min(len(listTrafico), self.sitiosTop)        
+        for i in range(cantDominiosTop):
+            tupla = listTrafico[i]
+            dominiosTop[tupla[1]] = tupla[0]
+        
+        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
+        listUsuariosTrafico = []
+        
+        for usr in diccUsuarios:
+            trafico = diccUsuarios[usr]
+            listUsuariosTrafico.append((trafico, usr))
+        
+        del diccUsuarios
+        
+        #ordeno esa lista
+        listUsuariosTrafico.sort()
+        listUsuariosTrafico.reverse()
+        
+        #genero los usuarios top (usuario, trafico)
+        usuariosTop = {}
+        
+        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)        
+        for i in range(cantUsuariosTop):
+            tupla = listUsuariosTrafico[i]
+            usuariosTop[tupla[1]] = tupla[0]
+        
+        #######################################################################
+        ##################    comienzo del informe  ###########################
+        #######################################################################
         #Titulo de la seccion
         seccion.section("Trafico de tipo Ajax")
 
         #Estadisticas de trafico
         seccion.texto("Estadisticas:")
-        seccion.texto("En la siguiente informaci'on se mostrar'a el trafico total en bytes \
-                      y el trafico de tipo ajax, tambi'en en bytes. Estos valores pueden ser \
-                      muy utiles a la hora de tener una idea general de cuanto es el tr'afico \
+        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
+                      uso de la red con relaci'on al trafico de tipo Ajax, \
+                      estos en algunos casos pueden ocupar una porci'on significativa \
+                      del trafico total.\
+                      A continuaci'on se puede ver esta informaci'on, donde se \
+                      muestra el trafico total (en Bytes) y el trafico de tipo ajax, \
+                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
+                      a la hora de tener una idea general de cuanto es el tr'afico \
                       din'amico dentro de la red.")
         seccion.itemize({'Trafico Total':str(trafico), 'Trafico Ajax':str(traficoAjax)}, "Bytes")
 
@@ -128,31 +190,49 @@ class Ajax(Reporte):
             seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
                            con respecto al total.")
 
+
+        #muestro los usuarios y sus gastos.
+        seccion.section("Trafico Ajax por usuario")
+        seccion.texto("En esta secci'on se mostrar'a el trafico ajax \
+                      que utiliza cada usuario. Para mayor comodidad, solo se \
+                      visualizar'an los " + str(self.usuariosTop) + " primeros \
+                      segun se configur'o en el archivo ajax.py.")
+        
+        texto = "\\begin{enumerate}\n"
+        for i in range(cantUsuariosTop):
+            texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
+        texto += "\\end{enumerate}\n"
+        seccion.texto(texto)
+        
+        print texto
+        
         #Si se quiso hacer un grafico por usuario
         if self.plotPorUsuario:
-            
-            #muestro los usuarios y sus gastos.
-            seccion.texto("En esta parte se mostrara el trafico ajax por usuarios.")
-            seccion.itemize(diccUsuarios, "Bytes")
-            
             #hago el grafico para los usuarios
             archivoSalida = "traficoAjaxUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, diccUsuarios, 800, 500, shadow = True, gradient = True)
+            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
             
             seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
                            utilizado por cada usuario.")
                         
-        #Si se quiso hacer un grafico por dominio
         
-        if self.plotPorDominios:
+        #muestro los dominios
+        seccion.section("Trafico Ajax por dominio")
+        seccion.texto("En esta secci'on se mostrar'a el trafico ajax \
+                      por dominio. Para mayor comodidad, solo se \
+                      visualizar'an los " + str(self.sitiosTop) + " primeros \
+                      segun se configur'o en el archivo ajax.py.")
 
-            #muestro los dominios
-            seccion.texto("En los siguientes puntos se mostrar'a el trafico a los diferentes dominios.")
-            seccion.itemize(diccDominios, "Bytes")
-            
+        texto = "\\begin{enumerate}\n"
+        for i in range(cantDominiosTop):
+            texto += "\\item %s: %s %s\n"%(listTrafico[i][1], listTrafico[i][0], "Bytes")
+        texto += "\\end{enumerate}\n"
+        seccion.texto(texto)
+        #Si se quiso hacer un grafico por dominio
+        if self.plotPorDominios:           
             #hago el grafico para los dominios
             archivoSalida = "traficoAjaxDominio.png"
-            CairoPlot.pie_plot(archivoSalida, diccDominios, 800, 500, shadow = True, gradient = True)
+            CairoPlot.pie_plot(archivoSalida, dominiosTop, 800, 500, shadow = True, gradient = True)
             seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
                            a cada dominio.")
             

@@ -8,6 +8,7 @@ from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Re
 import sys
 import cStringIO
 import datetime
+
 #TODO: permitir capturar a partir de un cap
 
 STANDARD_PORT = 8080
@@ -273,7 +274,8 @@ class NoHTTPAssembler(object):
 
 class HTTPAssembler(object):
     
-
+    #intervalo de tiempo para sacar las conexiones no ensambladas
+    tiempo = 60
 
     def __init__(self,noHTTP,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
@@ -287,10 +289,24 @@ class HTTPAssembler(object):
         self.identificadorHTTP = IdentificadorDeHTTP()
         self.noHTTP = noHTTP
     
-        
-        
         self.conversaciones = {}
         
+        #creo un thread para que saque las conexiones colgadas cada cierto tiempo
+        threading.Thread(target = sacarConexionesSinTerminar)
+        
+    def sacarConexionesSinTerminar():
+        #recorro todas las conexiones
+        while 1:
+            for each in self.conexiones:
+                #si el tiempo del la conexion es excesiva lo borro
+                #por que no se va a armar, entonces es basura
+                dif = datetime.datetime().now() - conexiones[each].datetime
+                if dif.seconds >= tiempo:
+                    del conexiones[each]
+            #espero un tiempo para verificar de nuevo
+            time.spleep(tiempo)
+    
+    
     def nuevo_paquete(self,pkt):
         
         #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host

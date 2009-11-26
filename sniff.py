@@ -8,6 +8,7 @@ from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Re
 import sys
 import cStringIO
 import datetime
+import threading
 
 #TODO: permitir capturar a partir de un cap
 
@@ -220,6 +221,11 @@ class NoHTTPAssembler(object):
         
         self.persistidorNoHTTP = PersistidorNoHTTP(self.port)
     
+    def limpiarConexiones(self,t):
+        conexiones = self.conexiones
+        for each in conexiones:
+            pass 
+    
     def _get_cuadrupla(self,pkt):
         pktIP = pkt.getlayer(IP)
         ipOrigen = pktIP.src
@@ -275,7 +281,7 @@ class NoHTTPAssembler(object):
 class HTTPAssembler(object):
     
     #intervalo de tiempo para sacar las conexiones no ensambladas
-    tiempo = 60
+    tiempo = 15
 
     def __init__(self,noHTTP,port=STANDARD_PORT):
         # port -> Puerto del proxy al que le vamos a prestar atencion
@@ -292,19 +298,40 @@ class HTTPAssembler(object):
         self.conversaciones = {}
         
         #creo un thread para que saque las conexiones colgadas cada cierto tiempo
-        threading.Thread(target = sacarConexionesSinTerminar)
+        t =threading.Thread(target = self.sacarConexionesSinTerminar)
+        t.setDaemon(True)
+        t.start()
         
-    def sacarConexionesSinTerminar():
+        
+    def sacarConexionesSinTerminar(self):
         #recorro todas las conexiones
         while 1:
+            print "me dispongo a limpiar"
+            print [x.datetime for x in self.conexiones]
+            aBorrar = []
             for each in self.conexiones:
                 #si el tiempo del la conexion es excesiva lo borro
                 #por que no se va a armar, entonces es basura
-                dif = datetime.datetime().now() - conexiones[each].datetime
-                if dif.seconds >= tiempo:
-                    del conexiones[each]
+                dif = datetime.datetime.now() - self.conexiones[each].datetime
+                if dif.seconds >= self.tiempo:
+                    aBorrar.append(each)
+            for each in aBorrar:
+                print "borro"
+                del self.conexiones[each]
+            aBorrar = []
+            for each in self.conversaciones:
+                #si el tiempo del la conexion es excesiva lo borro
+                #por que no se va a armar, entonces es basura
+                dif1 = datetime.datetime.now() - self.conversaciones[each].datetimeRequest
+                a = self.conversaciones[each].datetimeRequest
+                dif2 = 0 if (a is None) else datetime.datetime.now() - a
+                if dif.seconds >= self.tiempo or dif2.seconds >= self.tiempo:
+                    aBorrar.append(each)
+            for each in aBorrar:
+                print "borro"
+                del self.conversaciones[each]
             #espero un tiempo para verificar de nuevo
-            time.spleep(tiempo)
+            time.sleep(self.tiempo)
     
     
     def nuevo_paquete(self,pkt):
@@ -472,7 +499,8 @@ if options.from_file:
         print "imposible abrir el archivo %s"%options.from_file
         sys.exit(-1)
 else:
-    hs = HTTPandHTTPSSniffer(port=puerto)       
+    hs = HTTPandHTTPSSniffer(port=puerto)
+    
 
 
 hn = NoHTTPAssembler(port = puerto)
@@ -497,6 +525,7 @@ if options.dump_file:
 for each in ha.conversaciones:
     ha.conversaciones[each].terminada()
 
+print hn.conexiones
 hn.persistirTodo()
 
 

@@ -15,6 +15,7 @@ documento = """
 \\usepackage{ulem}
 \\usepackage{marvosym}
 \\usepackage{colortbl}
+\\usepackage{float}
 
 \\parskip    = 11 pt
 \\headheight	= 13.1pt

@@ -222,7 +222,7 @@ class Ajax(Reporte):
                       por dominio. Para mayor comodidad, solo se \
                       visualizar'an los " + str(self.sitiosTop) + " primeros \
                       segun se configur'o en el archivo ajax.py.")
-
+        
         texto = "\\begin{enumerate}\n"
         for i in range(cantDominiosTop):
             texto += "\\item %s: %s %s\n"%(listTrafico[i][1], listTrafico[i][0], "Bytes")

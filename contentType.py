@@ -131,7 +131,7 @@ class ContentType(Reporte):
     def subreporteXTipoDeTrafico(self,requests,responses,responsesContentType,requestsContentType,strTipoDeTrafico):
         #Calculo el trafico total en bytes sumando los bodys
         trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
+                  sum((len(x.body) for x in responses))        
         
         #Trafico por contenido
         traficoContentType = 0
@@ -261,142 +261,151 @@ class ContentType(Reporte):
     def ejecutar(self,desde,hasta):
         #obtengo todos los request y responses dentro de las fechas que me pasan
         requests, responses = self._obtenerTodoEnRango(desde,hasta)
+        
+        trafico = sum((len(x.body) for x in requests)) + \
+                  sum((len(x.body) for x in responses))
+        
+        if trafico > 0:
                               
-        #genero un diccionario donde las claves son los id de las respuestas
-        requestsDict = dict(((each.response, each) for each in requests))
-
-        responsesDeAplicacion = []
-        requestsDeAplicacion = []
-        if self.plotPorAplicacion:            
-        
-            # Obtenemos los responses de aplicacion
-            #responsesDeAplicacion = []
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAplicacion:
-                        responsesDeAplicacion.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses
-            #requestsDeAplicacion = []
-            for each in responsesDeAplicacion:
-                if each.id in requestsDict:
-                    requestsDeAplicacion.append(requestsDict[each.id])
-                    
-        ####################################################################################
+            #genero un diccionario donde las claves son los id de las respuestas
+            requestsDict = dict(((each.response, each) for each in requests))
+    
+            responsesDeAplicacion = []
+            requestsDeAplicacion = []
+            if self.plotPorAplicacion:            
             
-        responsesDeAudio = []
-        requestsDeAudio = []
-        if self.plotPorAudio:            
-        
-            # Obtenemos los responses de audio            
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAudio:
-                        responsesDeAudio.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses            
-            for each in responsesDeAudio:
-                if each.id in requestsDict:
-                    requestsDeAudio.append(requestsDict[each.id])
-                    
-        ####################################################################################
-        
-        responsesDeImagen = []
-        requestsDeImagen = []
-        if self.ContentTypeImagen:
-        
-            # Obtenemos los responses de imagen            
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeImagen:
-                        responsesDeImagen.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses            
-            for each in responsesDeImagen:
-                if each.id in requestsDict:
-                    requestsDeImagen.append(requestsDict[each.id])
-                    
-        ####################################################################################
-        
-        responsesDeMultipart = []
-        requestsDeMultipart = []
-        if self.plotPorMultipart:
-        
-            # Obtenemos los responses de archivos multipart            
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeComp:
-                        responsesDeMultipart.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses            
-            for each in responsesDeMultipart:
-                if each.id in requestsDict:
-                    requestsDeMultipart.append(requestsDict[each.id])
-                    
-        ####################################################################################
-        
-        responsesDeTexto = []
-        requestsDeTexto = []
-        if self.plotPorTexto:
-        
-            # Obtenemos los responses de texto            
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeTexto:
-                        responsesDeTexto.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses            
-            for each in responsesDeTexto:
-                if each.id in requestsDict:
-                    requestsDeTexto.append(requestsDict[each.id])
-                    
-        ####################################################################################
-        
-        responsesDeVideo = []
-        requestsDeVideo = []
-        if self.plotPorVideo:
-        
-            # Obtenemos los responses de video            
-            for each in responses:
-                if 'content-type' in each.headers:
-                    #me fijo si el tipo es del que quiero
-                    if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeVideo:
-                        responsesDeVideo.append(each)
-                    #print each.headers['content-type'].__repr__()
-             
-            # Obtenemos los request asociados a esos responses            
-            for each in responsesDeVideo:
-                if each.id in requestsDict:
-                    requestsDeVideo.append(requestsDict[each.id])
-                    
-        ####################################################################################
-            
-        #borro el diccionario por que ya no me sirve
-        del requestsDict
-        
-        ####################################################################################
-
+                # Obtenemos los responses de aplicacion
+                #responsesDeAplicacion = []
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAplicacion:
+                            responsesDeAplicacion.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses
+                #requestsDeAplicacion = []
+                for each in responsesDeAplicacion:
+                    if each.id in requestsDict:
+                        requestsDeAplicacion.append(requestsDict[each.id])
                         
+            ####################################################################################
+                
+            responsesDeAudio = []
+            requestsDeAudio = []
+            if self.plotPorAudio:            
+            
+                # Obtenemos los responses de audio            
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAudio:
+                            responsesDeAudio.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses            
+                for each in responsesDeAudio:
+                    if each.id in requestsDict:
+                        requestsDeAudio.append(requestsDict[each.id])
+                        
+            ####################################################################################
+            
+            responsesDeImagen = []
+            requestsDeImagen = []
+            if self.ContentTypeImagen:
+            
+                # Obtenemos los responses de imagen            
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeImagen:
+                            responsesDeImagen.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses            
+                for each in responsesDeImagen:
+                    if each.id in requestsDict:
+                        requestsDeImagen.append(requestsDict[each.id])
+                        
+            ####################################################################################
+            
+            responsesDeMultipart = []
+            requestsDeMultipart = []
+            if self.plotPorMultipart:
+            
+                # Obtenemos los responses de archivos multipart            
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeComp:
+                            responsesDeMultipart.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses            
+                for each in responsesDeMultipart:
+                    if each.id in requestsDict:
+                        requestsDeMultipart.append(requestsDict[each.id])
+                        
+            ####################################################################################
+            
+            responsesDeTexto = []
+            requestsDeTexto = []
+            if self.plotPorTexto:
+            
+                # Obtenemos los responses de texto            
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeTexto:
+                            responsesDeTexto.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses            
+                for each in responsesDeTexto:
+                    if each.id in requestsDict:
+                        requestsDeTexto.append(requestsDict[each.id])
+                        
+            ####################################################################################
+            
+            responsesDeVideo = []
+            requestsDeVideo = []
+            if self.plotPorVideo:
+            
+                # Obtenemos los responses de video            
+                for each in responses:
+                    if 'content-type' in each.headers:
+                        #me fijo si el tipo es del que quiero
+                        if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeVideo:
+                            responsesDeVideo.append(each)
+                        #print each.headers['content-type'].__repr__()
+                 
+                # Obtenemos los request asociados a esos responses            
+                for each in responsesDeVideo:
+                    if each.id in requestsDict:
+                        requestsDeVideo.append(requestsDict[each.id])
+                        
+            ####################################################################################
+                
+            #borro el diccionario por que ya no me sirve
+            del requestsDict
+            
+            ####################################################################################
+    
+                            
+            
+            #comienzo a generar el reporte        
+            res = "\\chapter{Tipo de trafico}\n"
+            res += self.subreporteTrafico(responsesDeAplicacion,requestsDeAplicacion,responsesDeAudio,requestsDeAudio,responsesDeImagen,requestsDeImagen, responsesDeVideo,requestsDeVideo,responsesDeTexto,requestsDeTexto,responsesDeMultipart,requestsDeMultipart)
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAplicacion,requestsDeAplicacion,"aplicacion")
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAudio,requestsDeAudio,"audio")
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeImagen,requestsDeImagen,"imagen")
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeMultipart,requestsDeMultipart,"multipart")
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeTexto,requestsDeTexto,"texto")
+            res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeVideo,requestsDeVideo,"video")
         
-        #comienzo a generar el reporte        
-        res = "\\chapter{Tipo de trafico}\n"
-        res += self.subreporteTrafico(responsesDeAplicacion,requestsDeAplicacion,responsesDeAudio,requestsDeAudio,responsesDeImagen,requestsDeImagen, responsesDeVideo,requestsDeVideo,responsesDeTexto,requestsDeTexto,responsesDeMultipart,requestsDeMultipart)
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAplicacion,requestsDeAplicacion,"aplicacion")
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAudio,requestsDeAudio,"audio")
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeImagen,requestsDeImagen,"imagen")
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeMultipart,requestsDeMultipart,"multipart")
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeTexto,requestsDeTexto,"texto")
-        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeVideo,requestsDeVideo,"video")
+        else:
+            res = "\\chapter{Tipo de trafico}\n"
+            res += "No hay tr'afico"
 
         print res
 

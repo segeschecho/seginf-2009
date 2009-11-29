@@ -126,28 +126,27 @@ class ContentType(Reporte):
     
         return seccion.generarOutput()
 
-    ########################################################################################################################
+    
 
-    def subreporteTraficoDeAplicacion(self,requests,responses,responsesDeAplicacion,requestsDeAplicacion):
+    def subreporteXTipoDeTrafico(self,requests,responses,responsesContentType,requestsContentType,strTipoDeTrafico):
         #Calculo el trafico total en bytes sumando los bodys
         trafico = sum((len(x.body) for x in requests)) + \
                   sum((len(x.body) for x in responses))
         
-        #Trafico de aplicacion
-        traficoAplicacion = 0
-
+        #Trafico por contenido
+        traficoContentType = 0
+    
         #Comienzo a escribir la seccion del reporte
         seccion = LatexFactory()
-
+    
         #diccionario de usuarios, que contendran el trafico usado
         diccUsuarios = {}
         
         #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeAplicacion:
-            #sumo el trafico aplicacion
-            traficoAplicacion += len(each.body)
+        for each in requestsContentType:
+            traficoContentType += len(each.body)
             
-            #recorro todos los responses y genero un diccionario con los usuarios            
+            #recorro todos los responses y genero un diccionario con los usuarios
             usuario = each.ipOrigen
             #guardo el dominio al cual se hizo el request
             host = each.headers["host"]
@@ -162,9 +161,8 @@ class ContentType(Reporte):
                 diccUsuarios[usuario] = len(each.body)                        
             
         
-        for each in responsesDeAplicacion:
-            #sigo sumando el trafico de aplicacion
-            traficoAplicacion += len(each.body)
+        for each in responsesContentType:            
+            traficoContentType += len(each.body)
             
             #recorro todos los request y genero un diccionario con los usuarios            
             usuario = each.ipDestino
@@ -175,7 +173,7 @@ class ContentType(Reporte):
                 diccUsuarios[usuario] += len(each.body)
             #sino agrego al usuario al diccionario
             else:
-                diccUsuarios[usuario] = len(each.body)        
+                diccUsuarios[usuario] = len(each.body) 
         
         #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
         listUsuariosTrafico = []
@@ -204,35 +202,32 @@ class ContentType(Reporte):
         ##################    comienzo del informe  ###########################
         #######################################################################
         #Titulo de la seccion
-        seccion.section("Trafico de tipo Aplicacion")
-
-        #Estadisticas de aplicacion
+        seccion.section("Trafico de tipo " + strTipoDeTrafico)
+    
+        #Estadisticas
         seccion.texto("Estadisticas:")
         seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Aplicacion, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
+                      uso de la red con relaci'on al trafico de tipo " + strTipoDeTrafico + ", \
                       A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo aplicacion, \
+                      muestra el trafico total (en Bytes) y el trafico de tipo " + strTipoDeTrafico + ", \
                       (tambi'en en Bytes). Estos valores pueden ser muy utiles \
                       a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Aplicacion':str(traficoAplicacion)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de aplicacion
-        if self.plotPorAplicacion and traficoAplicacion > 0:
+                      din'amico dentro de la red.")        
+        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de ' + strTipoDeTrafico:str(traficoContentType)}, "Bytes")
+        
+        if self.plotPorAplicacion and traficoContentType > 0:
             #hago el grafico para el trafico
-            d = {'Trafico Aplicacion': traficoAplicacion, 'Trafico no Aplicacion': trafico - traficoAplicacion}
-            archivoSalida = "traficoAplicacion.png"
+            d = {'Trafico ' + strTipoDeTrafico : traficoContentType, 'Trafico no ' + strTipoDeTrafico: trafico - traficoContentType}
+            archivoSalida = "trafico" + strTipoDeTrafico + ".png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)            
             seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Aplicacion \
-                            con respecto al total.")                
+            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
+                            con respecto al total.")
         
-        if traficoAplicacion > 0:
+        if traficoContentType > 0:
             #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Aplicaci'on por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de aplicaci'on \
+            seccion.section("Trafico de " + strTipoDeTrafico + " por usuario")
+            seccion.texto("En esta secci'on se mostrar'a el trafico de " + strTipoDeTrafico + " \
                           que utiliza cada usuario. Para mayor comodidad, solo se \
                           visualizar'an los " + str(self.usuariosTop) + " primeros \
                           segun se configur'o en el archivo contentType.py.")
@@ -246,712 +241,21 @@ class ContentType(Reporte):
             print texto
             
         else:
-            seccion.section("Trafico de Aplicaci'on por usuario")
-            seccion.texto("No hay tr'afico de aplicaci'on")
+            seccion.section("Trafico de " + strTipoDeTrafico + " por usuario")
+            seccion.texto("No hay tr'afico de " + strTipoDeTrafico)
         
         
         #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and traficoAplicacion > 0:
+        if self.plotPorUsuario and traficoContentType > 0:
             #hago el grafico para los usuarios
-            archivoSalida = "traficoAplicacionUsuarios.png"
+            archivoSalida = "trafico"+strTipoDeTrafico+"Usuarios.png"
             CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
             
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Aplicaci'on \
+            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
                            utilizado por cada usuario.")
         
         
-        return seccion.generarOutput()
-        
-    ########################################################################################################################
-        
-    def subreporteTraficoDeAudio(self,requests,responses,responsesDeAudio,requestsDeAudio):
-        #Calculo el trafico total en bytes sumando los bodys
-        trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
-        
-        #Trafico de audio
-        traficoAudio = 0
-
-        #Comienzo a escribir la seccion del reporte
-        seccion = LatexFactory()
-
-        #diccionario de usuarios, que contendran el trafico usado
-        diccUsuarios = {}
-        
-        #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeAudio:
-            #sumo el trafico audio
-            traficoAudio += len(each.body)
-            
-            #recorro todos los responses y genero un diccionario con los usuarios            
-            usuario = each.ipOrigen
-            #guardo el dominio al cual se hizo el request
-            host = each.headers["host"]
-            #guardo el id de las respuestas
-            id = each.response
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)                        
-            
-        
-        for each in responsesDeAudio:
-            #sigo sumando el trafico de audio
-            traficoAudio += len(each.body)
-            
-            #recorro todos los request y genero un diccionario con los usuarios            
-            usuario = each.ipDestino
-            id = each.id
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)        
-        
-        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
-        listUsuariosTrafico = []
-        
-        traficoDeUsu = 0
-        
-        for usr in diccUsuarios:
-            traficoDeUsu = diccUsuarios[usr]
-            listUsuariosTrafico.append((traficoDeUsu, usr))
-        
-        del diccUsuarios
-        
-        #ordeno esa lista
-        listUsuariosTrafico.sort()
-        listUsuariosTrafico.reverse()
-        
-        #genero los usuarios top (usuario, trafico)
-        usuariosTop = {}
-        
-        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)
-        for i in range(cantUsuariosTop):
-            tupla = listUsuariosTrafico[i]
-            usuariosTop[tupla[1]] = tupla[0]
-        
-        #######################################################################
-        ##################    comienzo del informe  ###########################
-        #######################################################################
-        #Titulo de la seccion
-        seccion.section("Trafico de tipo Audio")
-
-        #Estadisticas de audio
-        seccion.texto("Estadisticas:")
-        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Audio, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
-                      A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo audio, \
-                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
-                      a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Audio':str(traficoAudio)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de audio
-        if self.plotPorAudio:
-            #hago el grafico para el trafico
-            d = {'Trafico Audio': traficoAudio, 'Trafico no audio': trafico - traficoAudio}
-            archivoSalida = "traficoAudio.png"
-            CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
-
-            if cantUsuariosTop > 0:
-                seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-                seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Audio \
-                               con respecto al total.")        
-        
-        if cantUsuariosTop > 0:
-            #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Audio por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de audio \
-                          que utiliza cada usuario. Para mayor comodidad, solo se \
-                          visualizar'an los " + str(self.usuariosTop) + " primeros \
-                          segun se configur'o en el archivo contentType.py.")
-            
-            texto = "\\begin{enumerate}\n"
-            for i in range(cantUsuariosTop):
-                texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
-            texto += "\\end{enumerate}\n"
-            seccion.texto(texto)
-            
-            print texto
-            
-        else:
-            seccion.section("Trafico de Audio por usuario")
-            seccion.texto("No hay tr'afico de audio")
-        
-        
-        #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and cantUsuariosTop > 0:
-            #hago el grafico para los usuarios
-            archivoSalida = "traficoAudioUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
-            
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Audio \
-                           utilizado por cada usuario.")
-        
-        
-        return seccion.generarOutput()
-    
-    ########################################################################################################################
-    
-    def subreporteTraficoDeImagen(self,requests,responses,responsesDeImagen,requestsDeImagen):
-        #Calculo el trafico total en bytes sumando los bodys
-        trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
-        
-        #Trafico de imagen
-        traficoImagen = 0
-
-        #Comienzo a escribir la seccion del reporte
-        seccion = LatexFactory()
-
-        #diccionario de usuarios, que contendran el trafico usado
-        diccUsuarios = {}
-        
-        #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeImagen:
-            #sumo el trafico imagen
-            traficoImagen += len(each.body)
-            
-            #recorro todos los responses y genero un diccionario con los usuarios            
-            usuario = each.ipOrigen
-            #guardo el dominio al cual se hizo el request
-            host = each.headers["host"]
-            #guardo el id de las respuestas
-            id = each.response
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)                        
-            
-        
-        for each in responsesDeImagen:
-            #sigo sumando el trafico de imagen
-            traficoImagen += len(each.body)
-            
-            #recorro todos los request y genero un diccionario con los usuarios            
-            usuario = each.ipDestino
-            id = each.id
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)        
-        
-        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
-        listUsuariosTrafico = []
-        
-        traficoDeUsu = 0
-        
-        for usr in diccUsuarios:
-            traficoDeUsu = diccUsuarios[usr]
-            listUsuariosTrafico.append((traficoDeUsu, usr))
-        
-        del diccUsuarios
-        
-        #ordeno esa lista
-        listUsuariosTrafico.sort()
-        listUsuariosTrafico.reverse()
-        
-        #genero los usuarios top (usuario, trafico)
-        usuariosTop = {}
-        
-        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)
-        for i in range(cantUsuariosTop):
-            tupla = listUsuariosTrafico[i]
-            usuariosTop[tupla[1]] = tupla[0]
-        
-        #######################################################################
-        ##################    comienzo del informe  ###########################
-        #######################################################################
-        #Titulo de la seccion
-        seccion.section("Trafico de tipo Imagen")
-
-        #Estadisticas de imagen
-        seccion.texto("Estadisticas:")
-        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Imagen, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
-                      A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo imagen, \
-                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
-                      a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Imagen':str(traficoImagen)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de imagen
-        if self.plotPorImagenes:
-            #hago el grafico para el trafico
-            d = {'Trafico Imagen': traficoImagen, 'Trafico no Imagen': trafico - traficoImagen}
-            archivoSalida = "traficoImagen.png"
-            CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
-
-            if cantUsuariosTop > 0:
-                seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-                seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Imagen \
-                               con respecto al total.")        
-        
-        if cantUsuariosTop > 0:
-            #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Imagen por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de imagen \
-                          que utiliza cada usuario. Para mayor comodidad, solo se \
-                          visualizar'an los " + str(self.usuariosTop) + " primeros \
-                          segun se configur'o en el archivo contentType.py.")
-            
-            texto = "\\begin{enumerate}\n"
-            for i in range(cantUsuariosTop):
-                texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
-            texto += "\\end{enumerate}\n"
-            seccion.texto(texto)
-            
-            print texto
-            
-        else:
-            seccion.section("Trafico de Imagen por usuario")
-            seccion.texto("No hay tr'afico de imagen")
-        
-        
-        #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and cantUsuariosTop > 0:
-            #hago el grafico para los usuarios
-            archivoSalida = "traficoImagenUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
-            
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Imagen \
-                           utilizado por cada usuario.")
-        
-        
-        return seccion.generarOutput()
-    
-    ########################################################################################################################
-    
-    def subreporteTraficoDeVideo(self,requests,responses,responsesDeVideo,requestsDeVideo):
-        #Calculo el trafico total en bytes sumando los bodys
-        trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
-        
-        #Trafico de video
-        traficoVideo = 0
-
-        #Comienzo a escribir la seccion del reporte
-        seccion = LatexFactory()
-
-        #diccionario de usuarios, que contendran el trafico usado
-        diccUsuarios = {}
-        
-        #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeVideo:
-            #sumo el trafico video
-            traficoVideo += len(each.body)
-            
-            #recorro todos los responses y genero un diccionario con los usuarios            
-            usuario = each.ipOrigen
-            #guardo el dominio al cual se hizo el request
-            host = each.headers["host"]
-            #guardo el id de las respuestas
-            id = each.response
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)                        
-            
-        
-        for each in responsesDeVideo:
-            #sigo sumando el trafico de video
-            traficoVideo += len(each.body)
-            
-            #recorro todos los request y genero un diccionario con los usuarios            
-            usuario = each.ipDestino
-            id = each.id
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)        
-        
-        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
-        listUsuariosTrafico = []
-        
-        traficoDeUsu = 0
-        
-        for usr in diccUsuarios:
-            traficoDeUsu = diccUsuarios[usr]
-            listUsuariosTrafico.append((traficoDeUsu, usr))
-        
-        del diccUsuarios
-        
-        #ordeno esa lista
-        listUsuariosTrafico.sort()
-        listUsuariosTrafico.reverse()
-        
-        #genero los usuarios top (usuario, trafico)
-        usuariosTop = {}
-        
-        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)
-        for i in range(cantUsuariosTop):
-            tupla = listUsuariosTrafico[i]
-            usuariosTop[tupla[1]] = tupla[0]
-        
-        #######################################################################
-        ##################    comienzo del informe  ###########################
-        #######################################################################
-        #Titulo de la seccion
-        seccion.section("Trafico de tipo Video")
-
-        #Estadisticas de video
-        seccion.texto("Estadisticas:")
-        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Video, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
-                      A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo video, \
-                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
-                      a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Video':str(traficoVideo)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de video
-        if self.plotPorVideo:
-            #hago el grafico para el trafico
-            d = {'Trafico Video': traficoVideo, 'Trafico no Video': trafico - traficoVideo}
-            archivoSalida = "traficoVideo.png"
-            CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
-
-            if cantUsuariosTop > 0:
-                seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-                seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Video \
-                               con respecto al total.")        
-        
-        if cantUsuariosTop > 0:
-            #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Video por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de video \
-                          que utiliza cada usuario. Para mayor comodidad, solo se \
-                          visualizar'an los " + str(self.usuariosTop) + " primeros \
-                          segun se configur'o en el archivo contentType.py.")
-            
-            texto = "\\begin{enumerate}\n"
-            for i in range(cantUsuariosTop):
-                texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
-            texto += "\\end{enumerate}\n"
-            seccion.texto(texto)
-            
-            print texto
-            
-        else:
-            seccion.section("Trafico de Video por usuario")
-            seccion.texto("No hay tr'afico de Video")
-        
-        
-        #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and cantUsuariosTop > 0:
-            #hago el grafico para los usuarios
-            archivoSalida = "traficoVideoUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
-            
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Video \
-                           utilizado por cada usuario.")
-        
-        
-        return seccion.generarOutput()
-    
-    ########################################################################################################################
-    
-    def subreporteTraficoDeTexto(self,requests,responses,responsesDeTexto,requestsDeTexto):
-       #Calculo el trafico total en bytes sumando los bodys
-        trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
-        
-        #Trafico de texto
-        traficoTexto = 0
-
-        #Comienzo a escribir la seccion del reporte
-        seccion = LatexFactory()
-
-        #diccionario de usuarios, que contendran el trafico usado
-        diccUsuarios = {}
-        
-        #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeTexto:
-            #sumo el trafico texto
-            traficoTexto += len(each.body)
-            
-            #recorro todos los responses y genero un diccionario con los usuarios            
-            usuario = each.ipOrigen
-            #guardo el dominio al cual se hizo el request
-            host = each.headers["host"]
-            #guardo el id de las respuestas
-            id = each.response
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)                        
-            
-        
-        for each in responsesDeTexto:
-            #sigo sumando el trafico de texto
-            traficoTexto += len(each.body)
-            
-            #recorro todos los request y genero un diccionario con los usuarios            
-            usuario = each.ipDestino
-            id = each.id
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)        
-        
-        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
-        listUsuariosTrafico = []
-        
-        traficoDeUsu = 0
-        
-        for usr in diccUsuarios:
-            traficoDeUsu = diccUsuarios[usr]
-            listUsuariosTrafico.append((traficoDeUsu, usr))
-        
-        del diccUsuarios
-        
-        #ordeno esa lista
-        listUsuariosTrafico.sort()
-        listUsuariosTrafico.reverse()
-        
-        #genero los usuarios top (usuario, trafico)
-        usuariosTop = {}
-        
-        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)
-        for i in range(cantUsuariosTop):
-            tupla = listUsuariosTrafico[i]
-            usuariosTop[tupla[1]] = tupla[0]
-        
-        #######################################################################
-        ##################    comienzo del informe  ###########################
-        #######################################################################
-        #Titulo de la seccion
-        seccion.section("Trafico de tipo Texto")
-
-        #Estadisticas de texto
-        seccion.texto("Estadisticas:")
-        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Texto, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
-                      A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo texto, \
-                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
-                      a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Texto':str(traficoTexto)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de texto
-        if self.plotPorTexto:
-            #hago el grafico para el trafico
-            d = {'Trafico Texto': traficoTexto, 'Trafico no Texto': trafico - traficoTexto}
-            archivoSalida = "traficoTexto.png"
-            CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
-
-            if cantUsuariosTop > 0:
-                seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-                seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Texto \
-                               con respecto al total.")        
-        
-        if cantUsuariosTop > 0:
-            #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Texto por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de texto \
-                          que utiliza cada usuario. Para mayor comodidad, solo se \
-                          visualizar'an los " + str(self.usuariosTop) + " primeros \
-                          segun se configur'o en el archivo contentType.py.")
-            
-            texto = "\\begin{enumerate}\n"
-            for i in range(cantUsuariosTop):
-                texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
-            texto += "\\end{enumerate}\n"
-            seccion.texto(texto)
-            
-            print texto
-            
-        else:
-            seccion.section("Trafico de Texto por usuario")
-            seccion.texto("No hay tr'afico de texto")
-        
-        
-        #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and cantUsuariosTop > 0:
-            #hago el grafico para los usuarios
-            archivoSalida = "traficoTextoUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
-            
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Texto \
-                           utilizado por cada usuario.")
-        
-        
-        return seccion.generarOutput()
-    
-    ########################################################################################################################
-    
-    def subreporteTraficoMultipart(self,requests,responses,responsesDeMultipart,requestsDeMultipart):
-        #Calculo el trafico total en bytes sumando los bodys
-        trafico = sum((len(x.body) for x in requests)) + \
-                  sum((len(x.body) for x in responses))
-        
-        #Trafico de multipart
-        traficoMultipart = 0
-
-        #Comienzo a escribir la seccion del reporte
-        seccion = LatexFactory()
-
-        #diccionario de usuarios, que contendran el trafico usado
-        diccUsuarios = {}
-        
-        #genero los datos que despues voy a mostrar en el informe
-        for each in requestsDeMultipart:
-            #sumo el trafico multipart
-            traficoMultipart += len(each.body)
-            
-            #recorro todos los responses y genero un diccionario con los usuarios            
-            usuario = each.ipOrigen
-            #guardo el dominio al cual se hizo el request
-            host = each.headers["host"]
-            #guardo el id de las respuestas
-            id = each.response
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)                        
-            
-        
-        for each in responsesDeMultipart:
-            #sigo sumando el trafico de multipart
-            traficoMultipart += len(each.body)
-            
-            #recorro todos los request y genero un diccionario con los usuarios            
-            usuario = each.ipDestino
-            id = each.id
-            
-            #si el usuario ya estaba en el dicc sumo lo que uso
-            if usuario in diccUsuarios.keys():
-                diccUsuarios[usuario] += len(each.body)
-            #sino agrego al usuario al diccionario
-            else:
-                diccUsuarios[usuario] = len(each.body)        
-        
-        #creo una lista de tuplas(trafico, usuario) para ordenar y hacer el top
-        listUsuariosTrafico = []
-        
-        traficoDeUsu = 0
-        
-        for usr in diccUsuarios:
-            traficoDeUsu = diccUsuarios[usr]
-            listUsuariosTrafico.append((traficoDeUsu, usr))
-        
-        del diccUsuarios
-        
-        #ordeno esa lista
-        listUsuariosTrafico.sort()
-        listUsuariosTrafico.reverse()
-        
-        #genero los usuarios top (usuario, trafico)
-        usuariosTop = {}
-        
-        cantUsuariosTop = min(len(listUsuariosTrafico), self.usuariosTop)
-        for i in range(cantUsuariosTop):
-            tupla = listUsuariosTrafico[i]
-            usuariosTop[tupla[1]] = tupla[0]
-        
-        #######################################################################
-        ##################    comienzo del informe  ###########################
-        #######################################################################
-        #Titulo de la seccion
-        seccion.section("Trafico de tipo Multipart")
-
-        #Estadisticas de multipart
-        seccion.texto("Estadisticas:")
-        seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
-                      uso de la red con relaci'on al trafico de tipo Multipart, \
-                      estos en algunos casos pueden ocupar una porci'on significativa \
-                      del trafico total.\
-                      A continuaci'on se puede ver esta informaci'on, donde se \
-                      muestra el trafico total (en Bytes) y el trafico de tipo multipart, \
-                      (tambi'en en Bytes). Estos valores pueden ser muy utiles \
-                      a la hora de tener una idea general de cuanto es el tr'afico \
-                      din'amico dentro de la red.")
-        seccion.itemize({'Trafico Total':str(trafico), 'Trafico de Multipart':str(traficoMultipart)}, "Bytes")
-
-        #Si se quiso hacer un grafico del trafico de multipart
-        if self.plotPorMultipart:
-            #hago el grafico para el trafico
-            d = {'Trafico Multipart': traficoMultipart, 'Trafico no Multipart': trafico - traficoMultipart}
-            archivoSalida = "traficoMultipart.png"
-            CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
-
-            if cantUsuariosTop > 0:
-                seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-                seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Multipart \
-                               con respecto al total.")        
-        
-        if cantUsuariosTop > 0:
-            #muestro los usuarios y sus gastos.
-            seccion.section("Trafico de Multipart por usuario")
-            seccion.texto("En esta secci'on se mostrar'a el trafico de multipart \
-                          que utiliza cada usuario. Para mayor comodidad, solo se \
-                          visualizar'an los " + str(self.usuariosTop) + " primeros \
-                          segun se configur'o en el archivo contentType.py.")
-            
-            texto = "\\begin{enumerate}\n"
-            for i in range(cantUsuariosTop):
-                texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
-            texto += "\\end{enumerate}\n"
-            seccion.texto(texto)
-            
-            print texto
-            
-        else:
-            seccion.section("Trafico de multipart por usuario")
-            seccion.texto("No hay tr'afico de multipart")
-        
-        
-        #Si se quiso hacer un grafico por usuario
-        if self.plotPorUsuario and cantUsuariosTop > 0:
-            #hago el grafico para los usuarios
-            archivoSalida = "traficoMultipartUsuarios.png"
-            CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
-            
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de Multipart \
-                           utilizado por cada usuario.")
-        
-        
-        return seccion.generarOutput()
-    
+        return seccion.generarOutput()    
     
             
     def ejecutar(self,desde,hasta):
@@ -1087,12 +391,12 @@ class ContentType(Reporte):
         #comienzo a generar el reporte        
         res = "\\chapter{Tipo de trafico}\n"
         res += self.subreporteTrafico(responsesDeAplicacion,requestsDeAplicacion,responsesDeAudio,requestsDeAudio,responsesDeImagen,requestsDeImagen, responsesDeVideo,requestsDeVideo,responsesDeTexto,requestsDeTexto,responsesDeMultipart,requestsDeMultipart)
-        res += self.subreporteTraficoDeAplicacion(requests,responses,responsesDeAplicacion,requestsDeAplicacion)
-        res += self.subreporteTraficoDeAudio(requests,responses,responsesDeAudio,requestsDeAudio)
-        res += self.subreporteTraficoDeImagen(requests,responses,responsesDeImagen,requestsDeImagen)
-        res += self.subreporteTraficoMultipart(requests,responses,responsesDeMultipart,requestsDeMultipart)
-        res += self.subreporteTraficoDeTexto(requests,responses,responsesDeTexto,requestsDeTexto)
-        res += self.subreporteTraficoDeVideo(requests,responses,responsesDeVideo,requestsDeVideo)        
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAplicacion,requestsDeAplicacion,"aplicacion")
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeAudio,requestsDeAudio,"audio")
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeImagen,requestsDeImagen,"imagen")
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeMultipart,requestsDeMultipart,"multipart")
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeTexto,requestsDeTexto,"texto")
+        res += self.subreporteXTipoDeTrafico(requests,responses,responsesDeVideo,requestsDeVideo,"video")
 
         print res
 

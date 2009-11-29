@@ -2,6 +2,16 @@ class LatexFactory(object):
     def __init__(self):
         self.text = ""
     
+    def tabular(self, l, cant, unidad = ""):
+        self.text += "\\begin{tabular}{|l p{12cm}|}\n"
+        self.text += "\\hline \n"
+        for i in range(cant):
+            self.text += "\\textbf{%s:} & %s %s.\\\\"%(l[i][1], l[i][0], unidad)
+        
+        self.text += "\\hline \n"
+        self.text += "\\end{tabular} \n"
+
+    
     def itemize(self,d,unidad = ""):
         self.text += "\\begin{itemize}\n"
         for each in d:

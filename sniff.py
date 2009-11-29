@@ -12,7 +12,7 @@ import threading
 
 #TODO: permitir capturar a partir de un cap
 
-STANDARD_PORT = 8080
+STANDARD_PORT = 80
 DEFAULT_CAP ='captura.cap'
 
 #TODO: hacer la tabla de victoria

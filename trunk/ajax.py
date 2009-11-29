@@ -122,8 +122,8 @@ class Ajax(Reporte):
         listTrafico = []
         
         for dom in diccDominios:
-            trafico = diccDominios[dom]
-            listTrafico.append((trafico, dom))
+            traficoTemp = diccDominios[dom]
+            listTrafico.append((traficoTemp, dom))
         
         del diccDominios
         
@@ -143,8 +143,8 @@ class Ajax(Reporte):
         listUsuariosTrafico = []
         
         for usr in diccUsuarios:
-            trafico = diccUsuarios[usr]
-            listUsuariosTrafico.append((trafico, usr))
+            traficoTemp = diccUsuarios[usr]
+            listUsuariosTrafico.append((traficoTemp, usr))
         
         del diccUsuarios
         

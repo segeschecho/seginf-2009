@@ -17,6 +17,7 @@ from horarioLaboral import FueraDeHorario
 from blackList import ListaNegra
 from ajax import Ajax
 from contentType import ContentType
+from nonHTTP import NonHTTP
 
 
 class Configurador(HasTraits):
@@ -160,7 +161,9 @@ l5 = ListaNegra(categoria = 'spyware', lista ='./bl/spyware.list',directorio=dir
 c7 = Configurador(script = l5, nombre='spyware', descripciones = "Informa sobre el uso de sitios conocidos por introducir spyware")
 ct = ContentType()
 c8 = Configurador(script = ct, nombre = "Tipo de trafico", descripcion = "Muestra el tipo de trafico en la red")
-v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8],desde = date(2000,1,1), hasta = date(2100,1,1))
+non = NonHTTP()
+c9 = Configurador(script = non, nombre = "Protocolos de aplicacion", descripcion = "Muestra los distintos protocolos usados")
+v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9],desde = date(2000,1,1), hasta = date(2100,1,1))
 
 v.configure_traits()
 for filename in os.listdir(directorio):

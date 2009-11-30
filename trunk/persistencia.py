@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #!/usr/bin/python
-# -*- coding: utf8 -*-
-
+# -*- coding: utf-8 -*-
 
 
 from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, Text, PickleType,Binary, ForeignKey, text

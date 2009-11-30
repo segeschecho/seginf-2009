@@ -143,7 +143,7 @@ class FueraDeHorario(Reporte):
         self.render.nuevaLinea()
         if infractores == []:
                 
-            self.render.negrita("No hay infracciones"%(desde,hasta))
+            self.render.negrita("No hay infracciones")
             self.render.nuevaLinea()
             return self.render.generarOutput()
         else:

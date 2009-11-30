@@ -1,3 +1,4 @@
+
 from persistencia import get_session, RequestHTTP, ResponseHTTP
 from datetime import datetime,date
 from enthought.traits.api import *
@@ -30,7 +31,7 @@ class ListaNegra(Reporte):
     plotPorcentajePorUsuario = Bool(True)
     plotPorcentajeDeTrafico = Bool(True)
     verbose = Bool(False)
-    directorio = None
+    
 
     
     

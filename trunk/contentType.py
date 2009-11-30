@@ -1,3 +1,4 @@
+
 from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP
 from datetime import datetime,date
 from enthought.traits.api import *
@@ -119,10 +120,10 @@ class ContentType(Reporte):
         #Si se quiso hacer un grafico en el reporte lo hago
         if self.plotPorTrafico:
             d = {'Trafico de Aplicacion': traficoAplicacion, 'Trafico de Audio': traficoAudio, 'Trafico de Imagen': traficoImagen, 'Trafico de video': traficoVideo, 'Trafico de Texto': traficoTexto, 'Trafico Multipart': traficoMultipart}
-            archivoSalida = "trafico.png"
+            archivoSalida = self.directorio + "/" + "trafico.png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
     
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida)
+            seccion.figure(archivoSalida)
     
         return seccion.generarOutput()
 
@@ -218,10 +219,10 @@ class ContentType(Reporte):
         if self.plotPorAplicacion and traficoContentType > 0:
             #hago el grafico para el trafico
             d = {'Trafico ' + strTipoDeTrafico : traficoContentType, 'Trafico no ' + strTipoDeTrafico: trafico - traficoContentType}
-            archivoSalida = "trafico" + strTipoDeTrafico + ".png"
+            archivoSalida = self.directorio + "/" +"trafico" + strTipoDeTrafico + ".png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)            
             seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
+            seccion.figure(archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
                             con respecto al total.")
         
         if traficoContentType > 0:
@@ -248,10 +249,10 @@ class ContentType(Reporte):
         #Si se quiso hacer un grafico por usuario
         if self.plotPorUsuario and traficoContentType > 0:
             #hago el grafico para los usuarios
-            archivoSalida = "trafico"+strTipoDeTrafico+"Usuarios.png"
+            archivoSalida = self.directorio + "/" +"trafico"+strTipoDeTrafico+"Usuarios.png"
             CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
             
-            seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
+            seccion.figure(archivoSalida, "Proporci'on de trafico de " + strTipoDeTrafico + "\
                            utilizado por cada usuario.")
         
         

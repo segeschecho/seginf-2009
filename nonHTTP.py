@@ -1,3 +1,4 @@
+
 from persistencia import *
 import re
 from datetime import datetime,date
@@ -19,8 +20,9 @@ class NonHTTP(Reporte):
         self.render.negrita("Periodo: %s - %s"%(desde,hasta))
         self.render.nuevaLinea()
         distribucionTrafico = self.obtenerDistribucionTrafico(desde,hasta)
+        print "distribucion Trafico",distribucionTrafico, " aaaa"
         self.render.section("Distribucion del trafico segun protocolo de aplicacion")
-        #self.render.figure(self.graficarDistribucion(distribucionTrafico))
+        self.render.figure(self.graficarDistribucion(distribucionTrafico))
         infractores = self.obtenerInfractores(distribucionTrafico)
 
         if infractores == []:
@@ -31,7 +33,7 @@ class NonHTTP(Reporte):
                 self.render.itemize(infractores, "requests")
             self.render.section("Clientes de software mas utilizados")
             clientes = self.obtenerClientes(distribucionTrafico)
-            #self.render.figure(self.graficarClientes(clientes))
+            self.render.figure(self.graficarClientes(clientes))
         return self.render.generarOutput()
 
     def obtenerInfractores(self, distribucionTrafico):
@@ -67,17 +69,21 @@ class NonHTTP(Reporte):
                 
         trafico["traficoSSH"] = requestSSH
         trafico["traficoSSL"] = requestSSL
-        trafico["otros"] = requestTotales - requestSSH - requestSSH
+        trafico["otros"] = requestTotales - requestSSH - requestSSL
         distribucionTrafico["trafico"] = trafico
         distribucionTrafico["clientes"] = clientes
         distribucionTrafico["infractores"] = infractores
         return distribucionTrafico
 
     def graficarDistribucion(self, distribucionTrafico):
-        return CairoPlot.pie_plot("Distribucion_trafico.png", distribucionTrafico["trafico"], 800, 500,shadow = True, gradient = True)
+        nombre = self.directorio+'/Distribucion_trafico.png'
+        CairoPlot.pie_plot(nombre, distribucionTrafico["trafico"], 800, 500,shadow = True, gradient = True)
+        return nombre
 
     def graficarClientes(self, clientes):
-        return CairoPlot.pie_plot("Clientes.png", clientes, 800, 500,shadow = True, gradient = True)
+        nombre = self.directorio+'/ClientesSSH.png'
+        CairoPlot.pie_plot(nombre, clientes, 800, 500,shadow = True, gradient = True)
+        return nombre
 
 
 

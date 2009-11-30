@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP, RequestNoHTTP
 from datetime import datetime,date
 from enthought.traits.api import HasTraits
@@ -7,6 +8,7 @@ responses = {}
 requests = {}
 requestNoHTTP = {}
 class Reporte(HasTraits):
+    directorio = None
     def ejecutar(self,desde,hasta):
         raise NotImplementedError
         

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from sqlalchemy import text
 from persistencia import MensajeHTTP, RequestHTTP, ResponseHTTP, get_session, engine
 from datetime import datetime,date
@@ -7,7 +9,6 @@ from enthought.traits.ui.api import *
 from enthought.pyface.progress_dialog import ProgressDialog
 from enthought.pyface.file_dialog import FileDialog
 from enthought.pyface.message_dialog import MessageDialog
-
 import os
 import tempfile
 from templates import documento
@@ -101,9 +102,18 @@ class Ventana(HasTraits):
             from plasTeX.TeX import TeX
             from plasTeX.Renderers.XHTML import Renderer
             tex =TeX()
-            tex.input(documento%res)
+            texto = documento%res
+            
+            texto=texto.replace("'a", "\\'a")
+            texto=texto.replace("'e", "\\'e")
+            texto=texto.replace("'i", "\\'i")
+            texto=texto.replace("'o", "\\'o")
+            texto=texto.replace("'u", "\\'u")
+            #texto = unicode(texto,'utf-8')
+            tex.input(texto)
             outdir='informe'
             dire = os.getcwdu()
+            #FIXME: BORRAR el contenido de este directorio (salvo pdf)
             if not os.path.isdir(outdir):
                os.makedirs(outdir)
         
@@ -159,9 +169,9 @@ l4 = ListaNegra(categoria = 'Apuestas', lista ='./bl/timba.list',directorio=dire
 c6 = Configurador(script = l4, nombre='Apuestas', descripciones = "Informa sobre el uso de sitios de apuestas")
 l5 = ListaNegra(categoria = 'spyware', lista ='./bl/spyware.list',directorio=directorio)
 c7 = Configurador(script = l5, nombre='spyware', descripciones = "Informa sobre el uso de sitios conocidos por introducir spyware")
-ct = ContentType()
+ct = ContentType(directorio = directorio)
 c8 = Configurador(script = ct, nombre = "Tipo de trafico", descripcion = "Muestra el tipo de trafico en la red")
-non = NonHTTP()
+non = NonHTTP(directorio = directorio)
 c9 = Configurador(script = non, nombre = "Protocolos de aplicacion", descripcion = "Muestra los distintos protocolos usados")
 v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9],desde = date(2000,1,1), hasta = date(2100,1,1))
 

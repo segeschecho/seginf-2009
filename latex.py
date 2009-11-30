@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 class LatexFactory(object):
     def __init__(self):
-        self.text = ""
+        self.text = unicode("")
     
     def tabular(self, l, cant, unidad = ""):
         self.text += "\\begin{tabular}{|l p{12cm}|}\n"

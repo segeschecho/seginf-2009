@@ -1,6 +1,6 @@
 
 pre {
-    color: #004000;
+    color: #400000;
     width: 100%;
     font-size: 90%;
     background-color: #f0f0f0;
@@ -22,7 +22,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .navigation { clear:both }
-.navigation td          { background-color: #669933;
+.navigation td          { background-color: #aa3333;
                           color: #ffffcc;
                           font-weight: bold;
                           font-family: avantgarde, sans-serif;

@@ -34,7 +34,7 @@ class Ajax(Reporte):
     seccion = LatexFactory()
 
 
-
+    #FIXME: separa esto en metodos checho
     def subReporteTrafico(self,requests,responses,responsesAjax,requestsAjax):
         #Calculo el trafico total en bytes sumando los bodys
         trafico = sum((len(x.body) for x in requests)) + \
@@ -202,7 +202,7 @@ class Ajax(Reporte):
         self.seccion.section("Trafico de tipo Ajax")
 
         #Estadisticas de trafico
-        self.seccion.texto("Estadisticas:")
+        self.seccion.texto("Estadisticas:\n\n")
         self.seccion.texto("En los textos siguientes se mostrar'a informaci'on del \
                       uso de la red con relaci'on al trafico de tipo Ajax, \
                       estos en algunos casos pueden ocupar una porci'on significativa \
@@ -218,11 +218,11 @@ class Ajax(Reporte):
         if self.plotTrafico:
             #hago el grafico para el trafico
             d = {'Trafico Ajax': traficoAjax, 'Trafico no Ajax': trafico - traficoAjax}
-            archivoSalida = "traficoAjax.png"
+            archivoSalida = self.directorio + "/" + "traficoAjax.png"
             CairoPlot.pie_plot(archivoSalida, d, 800, 500, shadow = True, gradient = True)
 
             self.seccion.texto("En el siguiente gr'afico se puede apreciar mejor este volumen de trafico.")
-            self.seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+            self.seccion.figure(archivoSalida, "Proporci'on de trafico Ajax \
                            con respecto al total.")
 
 
@@ -233,6 +233,7 @@ class Ajax(Reporte):
                       visualizar'an los " + str(self.usuariosTop) + " primeros \
                       segun se configur'o en el archivo ajax.py.")
         
+        #FIXME: por que no usas el render? sabe hacer itemizes
         texto = "\\begin{enumerate}\n"
         for i in range(cantUsuariosTop):
             texto += "\\item %s: %s %s\n"%(listUsuariosTrafico[i][1], listUsuariosTrafico[i][0], "Bytes")
@@ -242,10 +243,10 @@ class Ajax(Reporte):
         #Si se quiso hacer un grafico por usuario
         if self.plotPorUsuario:
             #hago el grafico para los usuarios
-            archivoSalida = "traficoAjaxUsuarios.png"
+            archivoSalida = self.directorio + "/traficoAjaxUsuarios.png"
             CairoPlot.pie_plot(archivoSalida, usuariosTop, 800, 500, shadow = True, gradient = True)
             
-            self.seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+            self.seccion.figure(archivoSalida, "Proporci'on de trafico Ajax \
                            utilizado por cada usuario.")
                         
         
@@ -265,9 +266,9 @@ class Ajax(Reporte):
         #Si se quiso hacer un grafico por dominio
         if self.plotPorDominios:           
             #hago el grafico para los dominios
-            archivoSalida = "traficoAjaxDominio.png"
+            archivoSalida = self.directorio + "/traficoAjaxDominio.png"
             CairoPlot.pie_plot(archivoSalida, dominiosTop, 800, 500, shadow = True, gradient = True)
-            self.seccion.figure(str(os.getcwdu()) + "/" + archivoSalida, "Proporci'on de trafico Ajax \
+            self.seccion.figure(archivoSalida, "Proporci'on de trafico Ajax \
                            a cada dominio.")
             
         #si se quiso hacer un grafico de los usuarios por dominio

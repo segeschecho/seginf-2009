@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP
+from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP, RequestNoHTTP
 from datetime import datetime,date
 from enthought.traits.api import HasTraits
 
 responses = {}
 requests = {}
+requestNoHTTP = {}
 class Reporte(HasTraits):
     def ejecutar(self,desde,hasta):
         raise NotImplementedError
@@ -39,4 +40,17 @@ class Reporte(HasTraits):
         req = self.obtenerRequests(d,h)
         resp = self.obtenerResponses(d,h)
         return (req,resp)
+
+    def obtenerRequestsNoHTTP(self,desde,hasta):
+        global requestNoHTTP
+        if not (desde,hasta) in requestNoHTTP:
+            s = get_session()
+            d = datetime(desde.year,desde.month,desde.day)
+            h = datetime(hasta.year,hasta.month,hasta.day)
+            query = s.query(RequestNoHTTP)
+            query.filter(RequestNoHTTP.datetime >= str(d) )
+            query.filter(RequestNoHTTP.datetime <= str(h) )
+        
+            requestNoHTTP[(desde,hasta)] = query.all()
+        return requestNoHTTP[(desde,hasta)]
 

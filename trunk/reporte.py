@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP, RequestNoHTTP
+from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP, RequestNoHTTP, ResponseNoHTTP
 from datetime import datetime,date
 from enthought.traits.api import HasTraits
 
 responses = {}
 requests = {}
 requestNoHTTP = {}
+responseNoHTTP = {}
 class Reporte(HasTraits):
     directorio = None
     def ejecutar(self,desde,hasta):
@@ -55,4 +56,17 @@ class Reporte(HasTraits):
         
             requestNoHTTP[(desde,hasta)] = query.all()
         return requestNoHTTP[(desde,hasta)]
+
+    def obtenerResponsesNoHTTP(self,desde,hasta):
+        global responseNoHTTP
+        if not (desde,hasta) in responseNoHTTP:
+            s = get_session()
+            d = datetime(desde.year,desde.month,desde.day)
+            h = datetime(hasta.year,hasta.month,hasta.day)
+            query = s.query(ResponseNoHTTP)
+            query.filter(ResponseNoHTTP.datetime >= str(d) )
+            query.filter(ResponseNoHTTP.datetime <= str(h) )
+        
+            responseNoHTTP[(desde,hasta)] = query.all()
+        return responseNoHTTP[(desde,hasta)]
 

@@ -1,4 +1,5 @@
-
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 from persistencia import *
 import re
 from datetime import datetime,date
@@ -8,24 +9,27 @@ from enthought.traits.ui.menu import OKButton, CancelButton
 from latex import LatexFactory
 from reporte import Reporte
 import CairoPlot
+import operator
+import binascii
 
 class NonHTTP(Reporte):
     verbose = Bool(False)
     render = Instance(LatexFactory)
     plotTraficoPorUsuario = Bool(True)
+    plotClientes = Bool(True)
     cantInfractores = Range(value=5,low=1,high=10)
 
-    view = View('verbose', 'plotTraficoPorUsuario', 'cantInfractores', buttons=[OKButton, CancelButton])
+    view = View('verbose', 'plotTraficoPorUsuario', 'cantInfractores', 'plotClientes', buttons=[OKButton, CancelButton])
 
     
     def ejecutar(self,desde,hasta):
         self.render = LatexFactory()
-        self.render.chapter("Protocolos de aplicacion utilizados")
+        self.render.chapter("Protocolos de aplicaci'on utilizados")
             
         self.render.negrita("Periodo: %s - %s"%(desde,hasta))
         self.render.nuevaLinea()
         distribucionTrafico = self.obtenerDistribucionTrafico(desde,hasta)
-        self.render.section("Distribucion del trafico segun protocolo de aplicacion")
+        self.render.section("Distribucion del tr'afico seg'un protocolo de aplicaci'on")
         self.render.figure(self.graficar(distribucionTrafico["trafico"], "/Distribucion_trafico.png"))
         infractores = self.obtenerInfractores(distribucionTrafico)
         if not distribucionTrafico["huboInfracciones"]:
@@ -34,13 +38,17 @@ class NonHTTP(Reporte):
             if self.verbose:
                 self.render.negrita("IPs desde los cuales se utilizo el servicio de SSH")
                 self.render.itemize(infractores, "requests")
-            clientes = self.obtenerClientes(distribucionTrafico)
-            if clientes != []:
-                self.render.section("Clientes de software mas utilizados")
-                self.render.figure(self.graficar(clientes,'/ClientesSSH.png'))
-            #if self.plotTraficoPorUsuario:
-                #masInfractores = self.obtenerLosMasInfractores(infractores)
-                #self.graficarVarios()
+            if self.plotClientes:
+                clientes = self.obtenerClientes(distribucionTrafico)
+                if clientes != []:
+                    self.render.section("Clientes de software mas utilizados")
+                    self.render.figure(self.graficar(clientes,'/ClientesSSH.png'))
+            if self.plotTraficoPorUsuario:
+                masInfractores = self.obtenerLosMasInfractores(infractores, self.cantInfractores)
+                self.render.section("Distribuci'on de tr'afico seg'un protocolo de aplicaci'on por usuario")
+                self.render.negrita("Se muestran los gr'aficos para los %s usuarios mas infractores"%self.cantInfractores)
+                self.graficarVarios(masInfractores)
+        
                 
         return self.render.generarOutput()
 
@@ -55,56 +63,69 @@ class NonHTTP(Reporte):
         clientes = dict()
         trafico = dict()
         traficoPorUsuario = dict()
-        a = self.obtenerRequestsNoHTTP(desde,hasta)
         requestTotales = 0
         requestSSH = 0
+        requestTLS = 0
         requestSSL = 0
         requestHTTP = 0
         huboInfracciones = False
+        a = self.obtenerRequestsNoHTTP(desde,hasta)
         for each in a:
             requestTotales+=1
-            if "SSH-" in each.body:
+            if self.esSSH(each.body):
                 huboInfracciones = True
                 requestSSH+=1
-                matcher = re.search('SSH-\d.\d+-(\w+)', each.body)
-                cliente = matcher.group(1)
-                if cliente in clientes:
-                    clientes[cliente]= clientes[cliente] + 1
-                else:
-                    clientes[cliente] = 1
-                infractor = each.ipOrigen
+                obtenerCliente(each.body,clientes)
                 self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoSSH")
             else:
-                self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"otros")
+                if self.esSSL(each.body):
+                    requestSSL+=1
+                    self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoSSL")
+                else:
+                    if self.esTLS(each.body):
+                        requestTLS+=1
+                        self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoTLS")
+                    else:
+                        self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"otros")
+
 
         a = self.obtenerRequests(desde,hasta)
         for each in a:
             requestTotales+=1
             requestHTTP+=1
-            usuario = each.ipOrigen
-            self.agregarTrafico(traficoPorUsuario,usuario,"traficoHTTP")
+            self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoHTTP")
+            
         a = self.obtenerResponses(desde,hasta)
         for each in a:
             requestTotales+=1
             requestHTTP+=1
-            usuario = each.ipDestino
-            self.agregarTrafico(traficoPorUsuario,usuario,"traficoHTTP")
+            self.agregarTrafico(traficoPorUsuario,each.ipDestino,"traficoHTTP")
+            
 
         a = self.obtenerResponsesNoHTTP(desde,hasta)
         for each in a:
             requestTotales+=1
-            if "SSH-" in each.body:
+            if self.esSSH(each.body):
                 huboInfracciones = True
                 requestSSH+=1
-                infractor = each.ipDestino
-                self.agregarTrafico(traficoPorUsuario,infractor,"traficoSSH")
+                self.agregarTrafico(traficoPorUsuario,each.ipDestino,"traficoSSH")
             else:
-                self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"otros")
+                if self.esSSL(each.body):
+                    requestSSL+=1
+                    self.agregarTrafico(traficoPorUsuario,each.ipDestino,"traficoSSL")
+                else:
+                    if self.esTLS(each.body):
+                        requestTLS+=1
+                        self.agregarTrafico(traficoPorUsuario,each.ipDestino,"traficoTLS")
+                    else:
+                        self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"otros")
+
                 
         trafico["traficoSSH"] = requestSSH
         trafico["traficoSSL"] = requestSSL
+        trafico["traficoTLS"] = requestTLS
         trafico["traficoHTTP"] = requestHTTP
-        trafico["otros"] = requestTotales - requestSSH - requestSSL - requestHTTP
+        trafico["otros"] = requestTotales - requestSSH - requestSSL - requestHTTP - requestTLS
         distribucionTrafico["trafico"] = trafico
         distribucionTrafico["clientes"] = clientes
         distribucionTrafico["traficoPorUsuario"] = traficoPorUsuario
@@ -124,14 +145,30 @@ class NonHTTP(Reporte):
                 dic[usuario] = dict()
             dic[usuario][trafico] = 1
 
-    def obtenerLosMasInfractores(infractores, cantInfractores):
-        cantInfracciones = dict()
-        for infractor in infractores:
-            cantI = infractor["traficoSSH"]
-            if cantI in cantInfracciones:
-                cantInfracciones[cantI] = cantInfracciones[cantI].append(infractor)
-            else:
-                cantInfracciones[cantI] = [].append(infractor)
-        
+    def obtenerLosMasInfractores(self, infractoresDic, cantInfractores):
+        infractores = infractoresDic.items()
+        infractores.sort(key=lambda x: ("traficoSSH" in x[1] and x[1]["traficoSSH"]) or 0, reverse = True)
+        masInfractores = infractores[0:cantInfractores-1]
+        return filter(lambda x: "traficoSSH" in x[1],masInfractores)
 
+    def graficarVarios(self,masInfractores):
+        for infractor in masInfractores:
+            self.render.subsection("Distribuci'on del tr'afico en protocolos de aplicaci'on del usuario %s"%infractor[0])
+            self.render.figure(self.graficar(infractor[1],"/Infractor%s.png"%infractor[0].replace(".","-")))
 
+    def esSSH(self,body):
+        return "SSH-" in body
+
+    def esSSL(self,body):
+        return binascii.hexlify(body[1:3]) == "0300"
+
+    def esTLS(self,body):
+        return binascii.hexlify(body[1:3]) == "0301" or binascii.hexlify(body[1:3]) == "0302" or binascii.hexlify(body[1:3]) == "0303"
+
+    def obtenerCliente(self,body,clientes):
+        matcher = re.search('SSH-\d.\d+-(\w+)', body)
+        cliente = matcher.group(1)
+        if cliente in clientes:
+            clientes[cliente]= clientes[cliente] + 1
+        else:
+            clientes[cliente] = 1

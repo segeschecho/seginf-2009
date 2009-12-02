@@ -21,6 +21,9 @@ class LatexFactory(object):
     
     def section(self,nombre):
         self.text += "\\section{%s}\n"%(nombre)
+
+    def subsection(self,nombre):
+        self.text += "\\subsection{%s}\n"%(nombre)
     
     def chapter(self,nombre):
         self.text += "\\chapter{%s}\n"%(nombre)

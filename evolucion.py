@@ -31,6 +31,7 @@ class EvolucionMensual(Reporte):
         requests, responses = self._obtenerTodoEnRango(desde,hasta)
         responses = dict(((x.id,x) for x in responses))
         sitios = [self.sitio_1, self.sitio_2, self.sitio_3, self.sitio_4, self.sitio_5]
+        sitios = [x for x in sitios if not x == '']
         reqsXSitio = defaultdict(lambda:[])
         respXSitio = defaultdict(lambda:[])
         

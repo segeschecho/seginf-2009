@@ -26,10 +26,16 @@ class Ajax(Reporte):
                  unicode('application/x-javascript')]
     
     #cantidad de sitios a mostrar en los graficos
-    sitiosTop = 10
+    sitiosTop = Range(value=5,low=1,high=10)
     #cantidad de usuarios a mostrar en los graficos
-    usuariosTop = 10
-    
+    usuariosTop = Range(value=5,low=1,high=10)
+    view = View('plotPorUsuario',
+                'plotTrafico',
+                'plotPorDominios',
+                'plotDominiosPorUsuario',
+                'usuariosTop',
+                'sitiosTop',
+                )
     #Para escribir la seccion del reporte
     seccion = LatexFactory()
 

@@ -10,7 +10,7 @@ from enthought.pyface.message_dialog import MessageDialog
 from enthought.pyface.progress_dialog import ProgressDialog
 from enthought.traits.ui.menu import OKButton, CancelButton
 from latex import LatexFactory #para generar el codigo en latex
-
+from enthought.traits.ui.menu import OKButton, CancelButton
 
 class ContentType(Reporte):
 
@@ -23,9 +23,20 @@ class ContentType(Reporte):
     plotPorMultipart = Bool
     plotPorUsuario = Bool
     plotPorUsuario = Bool
-    
-    usuariosTop = 10
-    sitiosTop = 10
+    usuariosTop = Range(value=5,low=1,high=10)
+    sitiosTop  = Range(value=5,low=1,high=10)
+    view = View('plotPorTrafico',
+                'plotPorAplicacion',
+                'plotPorAudio',
+                'plotPorImagenes',
+                'plotPorVideo',
+                'plotPorTexto',
+                'plotPorMultipart',
+                'plotPorUsuario',
+                'plotPorUsuario',
+                'usuariosTop',
+                'sitiosTop',
+                buttons=[OKButton, CancelButton])
    
     #ContentTypeAplicacion = [unicode('application/atom+xml'), \
     #                         unicode('application/iges'), \
@@ -115,7 +126,7 @@ class ContentType(Reporte):
     
         #Estadisticas de trafico de aplicacion
         seccion.texto("Estadisticas:")
-        seccion.itemize({'Trafico de Aplicacion':str(traficoAplicacion), 'Trafico de Audio':str(traficoAudio), 'Trafico de Imagen':str(traficoImagen), 'Trafico de Video':str(traficoVideo), 'Trafico de Texto':str(traficoTexto), 'Trafico Multipart':str(traficoMultipart)})
+        seccion.itemize({'Trafico de Application':str(traficoAplicacion), 'Trafico de Audio':str(traficoAudio), 'Trafico de Imagen':str(traficoImagen), 'Trafico de Video':str(traficoVideo), 'Trafico de Texto':str(traficoTexto), 'Trafico Multipart':str(traficoMultipart)})
     
         #Si se quiso hacer un grafico en el reporte lo hago
         if self.plotPorTrafico:

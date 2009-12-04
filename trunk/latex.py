@@ -28,15 +28,15 @@ class LatexFactory(object):
     def chapter(self,nombre):
         self.text += "\\chapter{%s}\n"%(nombre)
     
-    def figure(self,direccion,caption = None,label = None):
+    def figure(self,direccion,caption = None,label = None,tamano=12):
         self.text += "\\begin{figure}[H]\n"
         self.text += "\\centering\n"
-        self.text += "\\includegraphics[width=12cm]{%s}\n"%direccion
+        self.text += "\\includegraphics[width=%scm]{%s}\n"%(tamano,direccion)
         if caption != None:
             self.text += "\\caption{%s}\n"%caption
         if label != None:
-            self.text += "\\label{%s}"%label
-        self.text += "\\end{figure}"
+            self.text += "\\label{%s}\n"%label
+        self.text += "\\end{figure}\n"
     
     def texto(self,texto):
         self.text += texto + "\n"
@@ -52,7 +52,14 @@ class LatexFactory(object):
     
     def generarOutput(self):
         return self.text
-                                        
+                        
+    def enColor(self,text,color):
+        self.text += '\\begin{center}\n'
+        self.text +="\\textcolor{%s}{\\verb<%s<}\n\n"%(color,text)
+        self.text += '\\end{center}\n\n'
+    def definirColor(self,nombre,r,g,b):
+        self.text+="\\definecolor{%s}{rgb}{%s,%s,%s}\n"%(nombre,r,g,b)
+    
         
         
         

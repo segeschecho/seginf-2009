@@ -120,7 +120,7 @@ class EvolucionMensual(Reporte):
         nombre = self.directorio+'/seguimiento_trafico.png'
         CairoPlot.dot_line_plot(nombre,cosa2,800,
             	                600,series_colors=colors,h_labels = labels, axis = True, grid=True,
-                                v_labels = v_labels,dots=True, )
+                                v_labels = v_labels2,dots=True, )
         self.render.figure(nombre,tamano=14,caption = 'Trafico en bytes')
         nroColor = 0
         

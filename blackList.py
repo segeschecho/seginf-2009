@@ -33,9 +33,7 @@ class ListaNegra(Reporte):
     verbose = Bool(False)
     
 
-    
-    
-        
+            
     view = View(Item('categoria',style='readonly'),
                 'lista', 'plotInfraccionesPorUsuario',
                 'plotDominiosVistados',
@@ -46,7 +44,6 @@ class ListaNegra(Reporte):
                 buttons=[OKButton, CancelButton])
     
 
-        
     def cargarLista(self):
        
         try:
@@ -59,11 +56,7 @@ class ListaNegra(Reporte):
       
         self.dicc = set((unicode(x[:-1]) for x in lineas))
         f.close()
-
-        
-            
-
-        
+          
     
     def esta(self,nombre):
         nombre = unicode(nombre)

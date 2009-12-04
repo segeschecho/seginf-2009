@@ -19,6 +19,7 @@ from blackList import ListaNegra
 from ajax import Ajax
 from contentType import ContentType
 from nonHTTP import NonHTTP
+from evolucion import EvolucionMensual
 
 
 class Configurador(HasTraits):
@@ -69,7 +70,6 @@ class Ventana(HasTraits):
         progress = ProgressDialog(title="Progreso", message="Generando reportes",
                               max=len(seleccionados)+3, show_time=True, can_cancel=True)
         progress.open()
-        dire = tempfile.mkdtemp(suffix='reporTool', prefix='')
         
         res =""
         i = 1
@@ -153,7 +153,7 @@ class Ventana(HasTraits):
 
  
 directorio = tempfile.mkdtemp(suffix='', prefix='reporTool')
-f = FueraDeHorario()
+f = FueraDeHorario(directorio = directorio)
 c = Configurador(script = f,nombre="Fuera de horario", descripcion = "Informa el uso de internet fuera de los horarios establecidos")
 l = ListaNegra(categoria = 'sexo',lista = './bl/sexo.list',directorio=directorio)
 c1 = Configurador(script = l, nombre = 'Sexo', descripccion = "Muestra informacion sobre accesos a paginas de sexo")
@@ -173,9 +173,12 @@ ct = ContentType(directorio = directorio)
 c8 = Configurador(script = ct, nombre = "Tipo de trafico", descripcion = "Muestra el tipo de trafico en la red")
 non = NonHTTP(directorio = directorio)
 c9 = Configurador(script = non, nombre = "Protocolos de aplicacion", descripcion = "Muestra los distintos protocolos usados")
-v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9],desde = date(2000,1,1), hasta = date(2100,1,1))
+ev = EvolucionMensual(directorio = directorio)
+c10 = Configurador(script = ev, nombre = "Evolucion mensual", descripcion = "Muestra como varia el trafico mensualmente para los sitios seleccionados")
+v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10],desde = date(2009,1,1), hasta = date(2010,1,1))
 
 v.configure_traits()
+
 for filename in os.listdir(directorio):
      os.remove(os.path.join(directorio, filename))
 os.rmdir(directorio)

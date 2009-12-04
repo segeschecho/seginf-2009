@@ -75,7 +75,7 @@ class NonHTTP(Reporte):
             if self.esSSH(each.body):
                 huboInfracciones = True
                 requestSSH+=1
-                obtenerCliente(each.body,clientes)
+                self.obtenerCliente(each.body,clientes)
                 self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoSSH")
             else:
                 if self.esSSL(each.body):

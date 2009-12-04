@@ -190,13 +190,14 @@ class DotLinePlot(Plot):
                  h_labels = None,
                  v_labels = None,
                  h_bounds = None,
-                 v_bounds = None):
+                 v_bounds = None,
+                 series_colors=None):
         
         self.bounds = {}
         self.bounds[HORZ] = h_bounds
         self.bounds[VERT] = v_bounds
         
-        Plot.__init__(self, surface, data, width, height, background, border, h_labels, v_labels)
+        Plot.__init__(self, surface, data, width, height, background, border, h_labels, v_labels,series_colors)
         self.axis = axis
         self.grid = grid
         self.dots = dots
@@ -226,11 +227,11 @@ class DotLinePlot(Plot):
         self.max_value[direction] = 0
         if self.labels[direction]:
             widest_word = max(self.labels[direction], key = lambda item: self.context.text_extents(item)[2])
-            self.max_value[direction] = self.context.text_extents(widest_word)[2]
+            self.max_value[direction] = self.context.text_extents(widest_word)[2]+20
             self.borders[other_direction(direction)] = self.max_value[direction] + self.border
         else:
             self.max_value[direction] = self.context.text_extents(str(self.bounds[direction][1]))[2]
-            self.borders[other_direction(direction)] = self.max_value[direction] + self.border + 20
+            self.borders[other_direction(direction)] = self.max_value[direction] + self.border - 20
             
     def calc_horz_extents(self):
         self.calc_extents(HORZ)
@@ -253,7 +254,7 @@ class DotLinePlot(Plot):
         cr.stroke()
     
     def render_labels(self):
-        self.context.set_font_size(self.font_size * 0.8)
+        self.context.set_font_size(self.font_size * 0.5)
         
         self.render_horz_labels()
         self.render_vert_labels()
@@ -1013,7 +1014,8 @@ def dot_line_plot(name,
                   h_labels= None,
                   v_labels = None,
                   h_bounds = None,
-                  v_bounds = None):
+                  v_bounds = None,
+                  series_colors=None):
     '''
         - Function to plot graphics using dots and lines.
         
@@ -1043,7 +1045,7 @@ def dot_line_plot(name,
         CairoPlot.dot_line_plot('teste2', teste_data_2, 400, 300, axis = True, grid = True, dots = True, h_labels = teste_h_labels)
     '''
     plot = DotLinePlot(name, data, width, height, background, border,
-                       axis, grid, dots, h_labels, v_labels, h_bounds, v_bounds)
+                       axis, grid, dots, h_labels, v_labels, h_bounds, v_bounds,series_colors)
     plot.render()
     plot.commit()
 

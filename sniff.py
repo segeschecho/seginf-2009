@@ -8,13 +8,16 @@ from persistencia import get_session, RequestHTTP, ResponseHTTP, MensajeHTTP, Re
 import sys
 import cStringIO
 import datetime
-#TODO: permitir capturar a partir de un cap
+
+try:
+    import psyco
+    psyco.full()
+except:
+    pass
 
 STANDARD_PORT = 8080
 DEFAULT_CAP ='captura.cap'
 
-#TODO: hacer la tabla de victoria
-#FIXME: ojo con las requests sin responses
 
 # Clase base de sniffer
 # Permite agregarle callbacks para que se llamen cada vez que llegue un paquete
@@ -259,10 +262,11 @@ class NoHTTPAssembler(object):
         if cuadrupla in self.conexiones:
 
             if pkt.lastlayer().haslayer(Raw):
-                if not self.conexiones[cuadrupla].conBody and cuadrupla[3] == self.port:
+                if not self.conexiones[cuadrupla].conBody and cuadrupla[3] == self.port :
                     desti,ori,des,org = cuadrupla
                     cuadrupla2 = (ori,desti,org,des)
-                    self.conexiones[cuadrupla2] = ConexionPotencialmenteNoHTTP(cuadrupla2)
+                    if cuadrupla2 not in self.conexiones:
+                        self.conexiones[cuadrupla2] = ConexionPotencialmenteNoHTTP(cuadrupla2)
                 self.conexiones[cuadrupla].agregarPaquete(pkt.getlayer(Raw))
                 if not self.conexiones[cuadrupla].noEsHTTP():
                     
@@ -303,6 +307,7 @@ class HTTPAssembler(object):
         self.identificadorHTTP = IdentificadorDeHTTP()
         self.noHTTP = noHTTP
     
+        self.connectsPendientes=set()
         
         
         self.conversaciones = {}
@@ -372,6 +377,8 @@ class HTTPAssembler(object):
                 
             if r.method == 'CONNECT':
                 self.noHTTP.agregarConexion(cuadrupla)
+                self.connectsPendientes.add(cuadrupla)
+                
                
                 
 
@@ -396,7 +403,9 @@ class HTTPAssembler(object):
             self._borrarCuadrupla(cuadrupla)
             (ipDestino, ipOrigen, portDestino, portOrigen) = cuadrupla
             cuadruplaRequest = (ipOrigen, ipDestino, portOrigen, portDestino)
-
+            if cuadruplaRequest in self.connectsPendientes:
+                self.noHTTP.agregarConexion(cuadrupla)
+                self.connectsPendientes.remove(cuadruplaRequest)
             if cuadruplaRequest in self.conversaciones:
                 self.conversaciones[cuadruplaRequest].response = r
                 self.conversaciones[cuadruplaRequest].datetimeResponse = timestamp
@@ -405,6 +414,7 @@ class HTTPAssembler(object):
                 
                 if not (idR is None) :
                     self.noHTTP.agregarID(idR,cuadruplaRequest)
+                
                 
                 del self.conversaciones[cuadruplaRequest]
             else:

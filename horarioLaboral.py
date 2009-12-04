@@ -7,7 +7,6 @@ from latex import LatexFactory
 from reporte import Reporte
 import CairoPlot
 from collections import defaultdict
-import os
 
 class FueraDeHorario(Reporte):
     
@@ -84,8 +83,9 @@ class FueraDeHorario(Reporte):
         self.render.itemize(cant,'requests')
         self.render.nuevaLinea()
         if self.plotUsuarios:
-            CairoPlot.pie_plot("FueraDeHorario_usuarios.png", cant, 800, 500,shadow = True, gradient = True)
-            self.render.figure('%s/FueraDeHorario_usuarios.png'%os.getcwdu(),caption=\
+            nombre = self.directorio + '/FueraDeHorario_usuarios.png'
+            CairoPlot.pie_plot(nombre, cant, 800, 500,shadow = True, gradient = True)
+            self.render.figure(nombre,caption=\
                            'Cantidad de accesos de los usuarios infractores (sobre un total de %s pedidos)'\
                            %len(infractores))
         self.render.nuevaPagina()
@@ -111,13 +111,14 @@ class FueraDeHorario(Reporte):
         self.render.itemize(cant2,'requests')
         self.render.nuevaLinea()
         if self.plotHorarios:
-            CairoPlot.bar_plot ('FueraDeHorario_horarios.png',
+            nombre = self.directorio + '/FueraDeHorario_horarios.png'
+            CairoPlot.bar_plot (nombre,
             [cant[h] for h in horas], 400, 300, 
             border = 20, grid = True, rounded_corners = True,
             h_labels=[str(x) for x in horas],
             v_labels = ['0',str(maximo/4.0),str(maximo/2.0)
             ,str(3*maximo/4.0),str(maximo)],three_dimension=True)
-            self.render.figure('%s/FueraDeHorario_horarios.png'%os.getcwdu(),caption=\
+            self.render.figure(nombre,caption=\
                            'Distribucion de los accesos segun el horario (sobre un total de %s pedidos'\
                            %largo)
 
@@ -159,7 +160,3 @@ class FueraDeHorario(Reporte):
                             
         return self.render.generarOutput()
         
-#variables necesarias para poder importar el modulo 
-reporte = FueraDeHorario()
-nombre = "Fuera de horario"
-descripcion = "Informa el uso de internet fuera de los horarios establecidos"

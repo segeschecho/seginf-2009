@@ -55,14 +55,16 @@ class RequestNoHTTP(Base):
     portDestino = Column(Integer)
     body = Column(PickleType)
     datetime = Column(DateTime)
+    request = Column(Integer, ForeignKey('requests.id'))
     
-    def __init__(self,ipOrigen,ipDestino,portOrigen,portDestino,body,datetime):
+    def __init__(self,ipOrigen,ipDestino,portOrigen,portDestino,body,datetime,request):
         self.ipOrigen = ipOrigen
         self.ipDestino = ipDestino
         self.portDestino = portDestino
         self.portOrigen = portOrigen
         self.body = body
         self.datetime = datetime
+        self.request = request
         
 class ResponseNoHTTP(Base):
     __tablename__ = 'responsesNo'
@@ -74,6 +76,7 @@ class ResponseNoHTTP(Base):
     body = Column(PickleType)
     datetime = Column(DateTime)
     
+    
     def __init__(self,ipOrigen,ipDestino,portOrigen,portDestino,body,datetime):
         self.ipOrigen = ipOrigen
         self.ipDestino = ipDestino
@@ -81,6 +84,7 @@ class ResponseNoHTTP(Base):
         self.portOrigen = portOrigen
         self.body = body
         self.datetime = datetime
+        
     
 class RequestHTTP(MensajeHTTP):
     __tablename__ = 'requests'

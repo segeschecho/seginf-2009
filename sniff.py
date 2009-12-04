@@ -118,6 +118,10 @@ class Conversacion(object):
         if self.request:
             self.persistidor.persistirRequest(self.cuadrupla,self.request,
                                           self.datetimeRequest, idResp)
+                                          
+            # Al persitir un request devuelvo el ultimo ID, porque puede ser util
+            # para detectar el comienzo de una nueva conexion
+            return self.persistidor.ultimoId
         
         
 
@@ -173,6 +177,7 @@ class ConexionPotencialmenteNoHTTP(object):
         self.datetime = datetime.datetime.now()
         self.identificadorHTTP = IdentificadorDeHTTP()
         self.seQueNoEs = None
+        self.idr = None
         
     
     def noEsHTTP(self):
@@ -189,6 +194,10 @@ class ConexionPotencialmenteNoHTTP(object):
     def agregarPaquete(self,chunk):
         self.body += chunk.load
         self.conBody = True
+        
+    def agregarID(self,idr):
+        self.idr = idr
+    
             
     
 class PersistidorNoHTTP(object):
@@ -197,12 +206,13 @@ class PersistidorNoHTTP(object):
         self.port = port
     
     def persistir(self, mensaje):
+
         s = get_session()
         ipOrigen, ipDestino, portOrigen, portDestino = mensaje.cuadrupla
         if portOrigen == self.port:
             s.add(ResponseNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime))
         else:
-            s.add(RequestNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime))
+            s.add(RequestNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime,mensaje.idr))
         s.commit()
 
 
@@ -231,6 +241,12 @@ class NoHTTPAssembler(object):
     def agregarConexion(self,cuadrupla):
         self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
 
+    def agregarID(self,idr,cuadrupla):
+        print "agrego ID"
+        if cuadrupla in self.conexiones:
+            print "funcione"
+            self.conexiones[cuadrupla].agregarID(idr)
+        
     #FIXME: hay q agarrar las cosas luego de un connect!    
     def nuevo_paquete(self,pkt):
         #HACK: parece que scapy escucha 2 veces los paquetes si el proxy esta en su mismo host
@@ -258,7 +274,7 @@ class NoHTTPAssembler(object):
                 del self.conexiones[cuadrupla]
                 return
             if (pkt.getlayer(TCP).flags & 4) > 0: #flag de reset
-                if self.conexiones[cuadrupla].conBody:
+                if self.conexiones[cuadrupla]:
                     self.persistidorNoHTTP.persistir(self.conexiones[cuadrupla])
                 del self.conexiones[cuadrupla]
 
@@ -309,12 +325,16 @@ class HTTPAssembler(object):
         portDestino = pktTCP.dport
         if not(portOrigen == self.port or portDestino == self.port):
             return
+        
+        self.noHTTP.nuevo_paquete(pkt)
+        
         #Si viene del proxy es un response (potencialmente), sino es un request
         if portOrigen == self.port:
             self.response(pkt)
         else:
             self.request(pkt)
-        self.noHTTP.nuevo_paquete(pkt)
+ 
+       
     
     def _agregarPaquete(self,pkt):
         cuadrupla = self._get_cuadrupla(pkt)
@@ -349,13 +369,15 @@ class HTTPAssembler(object):
                 self.conversaciones[cuadrupla].request = r
                 self.conversaciones[cuadrupla].datetimeRequest = timestamp
                 self.conversaciones[cuadrupla].cuadrupla = cuadrupla
+                
             if r.method == 'CONNECT':
                 self.noHTTP.agregarConexion(cuadrupla)
                
                 
 
-        except Exception, e:
-            #No pude armar el request todavia
+        except NeedData, e:
+            pass
+        except UnpackError, e:
             pass
         
     #Saca a una cuadrupla de los diccionarios de paquetes y secuencias
@@ -379,7 +401,10 @@ class HTTPAssembler(object):
                 self.conversaciones[cuadruplaRequest].response = r
                 self.conversaciones[cuadruplaRequest].datetimeResponse = timestamp
                 
-                self.conversaciones[cuadruplaRequest].terminada()
+                idR =  self.conversaciones[cuadruplaRequest].terminada()
+                
+                if not (idR is None) :
+                    self.noHTTP.agregarID(idR,cuadruplaRequest)
                 
                 del self.conversaciones[cuadruplaRequest]
             else:
@@ -388,6 +413,9 @@ class HTTPAssembler(object):
                 c.datetimeResponse = timestamp
                 c.cuadrupla = cuadruplaRequest
                 c.terminada()
+                
+                
+                
                 
                 
         except NeedData, e:

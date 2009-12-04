@@ -20,6 +20,7 @@ from ajax import Ajax
 from contentType import ContentType
 from nonHTTP import NonHTTP
 from evolucion import EvolucionMensual
+from heuristica import Heuristica
 
 
 class Configurador(HasTraits):
@@ -48,7 +49,8 @@ class Ventana(HasTraits):
     hasta = Date(date.today())
     scripts = List(Configurador)
     generarReporte = Button(label='Generar')
-    salida = File('fede.pdf')
+    salida = File('reporte.pdf')
+    directorioSalidaDeHTML = Directory(value='./informe')
     ingresarComandos = Button(label='Modo interactivo')
     
     def _ingresarComandos_fired(self):
@@ -111,7 +113,7 @@ class Ventana(HasTraits):
             texto=texto.replace("'u", "\\'u")
             #texto = unicode(texto,'utf-8')
             tex.input(texto)
-            outdir='informe'
+            outdir=self.directorioSalidaDeHTML
             dire = os.getcwdu()
             #FIXME: BORRAR el contenido de este directorio (salvo pdf)
             if not os.path.isdir(outdir):
@@ -144,7 +146,9 @@ class Ventana(HasTraits):
                     del lista[each]
         return
     formato = Enum(['pdf','html','ambos'])
-    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), 'formato',Item('salida', editor=FileEditor(), style='text'),
+    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), 'formato',
+            Item('salida', editor=FileEditor(), style='text'),
+            Item('directorioSalidaDeHTML', editor=DirectoryEditor(),style='text'),
             Item('scripts',editor=ListEditor(style='custom'),resizable=True,show_label=False),
             Item('generarReporte'), 'ingresarComandos',
             resizable=True,
@@ -175,7 +179,10 @@ non = NonHTTP(directorio = directorio)
 c9 = Configurador(script = non, nombre = "Protocolos de aplicacion", descripcion = "Muestra los distintos protocolos usados")
 ev = EvolucionMensual(directorio = directorio)
 c10 = Configurador(script = ev, nombre = "Evolucion mensual", descripcion = "Muestra como varia el trafico mensualmente para los sitios seleccionados")
-v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10],desde = date(2009,1,1), hasta = date(2010,1,1))
+he = Heuristica(directorio = directorio, categoria = 'Sexo', archivo = './heuristicas/sex.txt')
+c11 = Configurador(script = he, nombre = "Heuristica sexo", descripcion = "Realiza una busqueda heuristica para detectar visitas a paginas de sexo")
+
+v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11],desde = date(2009,1,1), hasta = date(2010,1,1))
 
 v.configure_traits()
 

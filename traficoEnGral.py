@@ -12,7 +12,8 @@ class TraficoEnGral(Reporte):
     
     sitiosTop = Range(value=5,low=1,high=10)
     
-    view = View('plotSitiosTop')
+    view = View('plotSitiosTop',
+                'sitiosTop')
     
     #Para escribir la seccion del reporte
     seccion = LatexFactory()

@@ -291,10 +291,10 @@ class Ajax(Reporte):
                 
                 cantUsuariosDominiosTop = min(len(listaTemp), self.sitiosTop)
                 
+                listaTempTop = listaTemp[:cantUsuariosDominiosTop]
+                
                 self.seccion.texto("\\textbf{%s :}"%(each))
-                self.seccion.texto("\\\\")
-                self.seccion.tabular(listaTemp, cantUsuariosDominiosTop, "Accesos")
-                self.seccion.texto("\\\\\\\\")
+                self.seccion.itemize(listaTempTop, "Accesos")
         
         return True
        

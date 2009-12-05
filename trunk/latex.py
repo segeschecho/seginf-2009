@@ -14,10 +14,16 @@ class LatexFactory(object):
 
     
     def itemize(self,d,unidad = ""):
-        self.text += "\\begin{itemize}\n"
-        for each in d:
-            self.text += "\\item %s: %s %s\n"%(each,d[each],unidad)
-        self.text += "\\end{itemize}\n"
+        if isinstance(d, dict):
+            self.text += "\\begin{itemize}\n"
+            for each in d:
+                self.text += "\\item %s: %s %s\n"%(each,d[each],unidad)
+            self.text += "\\end{itemize}\n"
+        elif isinstance(d, list):
+            self.text += "\\begin{itemize}\n"
+            for each in d:
+                self.text += "\\item %s: %s %s\n"%(each[1],each[0],unidad)
+            self.text += "\\end{itemize}\n"
     
     def section(self,nombre):
         self.text += "\\section{%s}\n"%(nombre)

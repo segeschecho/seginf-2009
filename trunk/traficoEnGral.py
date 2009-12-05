@@ -57,7 +57,12 @@ class TraficoEnGral(Reporte):
         
         for each in responses:
             idResponse = each.id
-            dominio = diccIds[idResponse]
+            
+            #me fijo si esa respuesta, tiene un request asi no se rompe todo
+            if not idResponse in diccIds.keys():
+                continue
+                
+            dominio = diccIds[idResponse]                
             bytes = len(each.body)
     
             #sumo los bytes del la respuesta
@@ -71,22 +76,24 @@ class TraficoEnGral(Reporte):
         listConsumo = diccDominios.values()
         listConsumo.sort()
         listConsumo.reverse()
+        largo = min(self.sitiosTop, len(listConsumo))
         
         #ahora escribo esto en un latex
         self.seccion.chapter("Sitios con mas trafico")
         self.seccion.texto("En este parte se mostrar'an los sitios con mas trafico \
                    desde la fecha deinicio seleccionada hasta la fecha final.")
-        self.seccion.tabular(listConsumo, self.sitiosTop, "Bytes")
+        #copio los elementos que me interesan de la lista
+        listTop = listConsumo[:largo]
+        self.seccion.itemize(listTop, "Bytes")
         
         #si se quiso hacer un grafico lo hago
         if self.plotSitiosTop:
             #paso los datos de la lista a un dicc
             diccTemp = {}
             
-            largo = min(self.sitiosTop, len(listConsumo))
             for i in range(largo):
-                dominio = listConsumo[i][1]
-                consumo = listConsumo[i][0]
+                dominio = listTop[i][1]
+                consumo = listTop[i][0]
                 diccTemp[dominio] = consumo
                 
             #hago el grafico

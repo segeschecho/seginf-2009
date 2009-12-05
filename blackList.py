@@ -57,7 +57,7 @@ class ListaNegra(Reporte):
         self.dicc = set((unicode(x[:-1]) for x in lineas))
         f.close()
           
-    
+    #Realiza una busqueda de subfijos buscando dominios
     def esta(self,nombre):
         nombre = unicode(nombre)
         cand = ""
@@ -67,6 +67,7 @@ class ListaNegra(Reporte):
                 return cand
             cand = '.'+cand
         return None
+            
             
     def ejecutar(self,desde,hasta):
         self.render = LatexFactory()
@@ -87,6 +88,9 @@ class ListaNegra(Reporte):
         else:
             if self.verbose:
                 self.render.texto("\\begin{itemize}\n")
+                
+            # Armo distintas estructuras de datos con informacion necesaria para
+            # los distintos subreportes
             infractores = set()
             infracciones = defaultdict(lambda:0)
             requestsPorUsuarios = defaultdict(lambda:0)
@@ -98,6 +102,7 @@ class ListaNegra(Reporte):
             encontre = False
             requestsInfractores = []
             dominiosXHeader = {}
+            
             for each in requests:
                 if 'host' in each.headers:
                     
@@ -117,6 +122,7 @@ class ListaNegra(Reporte):
                         encontre = True
                         requestsInfractores.append(each.id)
                 requestsPorUsuarios[each.ipOrigen] += 1
+
             if not encontre:
                 if self.verbose:
                     self.render.texto("\\item No hubo accesos a sitios de esta categoria\n")
@@ -129,6 +135,7 @@ class ListaNegra(Reporte):
             
             del self.dicc
             
+            #Ahora armo los subreportes
             self.plotearPorcentaje(len(requests), visitasTotales,desde,hasta)
             del requests
             self.plotearPorcentajePorUsuario(infractores, infracciones, requestsPorUsuarios)
@@ -290,7 +297,8 @@ class ListaNegra(Reporte):
         traficoInfraccion = defaultdict(lambda:0)
         for each in requestAll:
             traficoReq = len(each.body) + self.calcularLargoDeLosHeaders(each.headers)
-            traficoResp = len(responses[each.response].body) + self.calcularLargoDeLosHeaders(responses[each.response].headers) \
+            traficoResp = len(responses[each.response].body) + \
+                            self.calcularLargoDeLosHeaders(responses[each.response].headers) \
                           if each.response in responses else 0
             traficoTotal += traficoReq
             traficoTotal += traficoResp
@@ -315,5 +323,6 @@ class ListaNegra(Reporte):
         if self.plotPorcentajeDeTrafico:
             nombre = self.directorio + "/trafico_%s.png" % self.categoria.replace(' ','')
             CairoPlot.pie_plot(nombre,d, 800, 500,shadow=True,gradient=True)
-            self.render.figure(nombre, caption =' Porcentaje del trafico en infraccion para la categoria %s (total de trafico: %s bytes)'%(self.categoria,traficoTotal))
+            self.render.figure(nombre,
+                               caption =' Porcentaje del trafico en infraccion para la categoria %s (total de trafico: %s bytes)'%(self.categoria,traficoTotal))
 

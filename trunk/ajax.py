@@ -300,6 +300,7 @@ class Ajax(Reporte):
        
         
     def ejecutar(self,desde,hasta):
+        self.seccion = LatexFactory()
         #obtengo todos los request y responses dentro de las fechas que me pasan
         requests, responses = self._obtenerTodoEnRango(desde,hasta)
         

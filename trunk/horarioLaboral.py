@@ -9,7 +9,8 @@ import CairoPlot
 from collections import defaultdict
 
 class FueraDeHorario(Reporte):
-    
+    """ Genera un reporte sobre el uso de internet por horas y busca por usuarios
+        infractores que usan internet en un cierto horario y dias """
     minimo = 0
     maximo = 23
     semana = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo']
@@ -21,7 +22,7 @@ class FueraDeHorario(Reporte):
     dias = List()
     render = Instance(LatexFactory)
     
-    
+    ## Inicializaciones varias
     def _dias_default(self):
         return range(5)
     
@@ -31,6 +32,7 @@ class FueraDeHorario(Reporte):
     def _horario_salida_default(self):
         return 17
     
+    ## Vista de configuracion
     view = View( 
             Item('horario_entrada', show_label=True, editor = \
                  RangeEditor(high_name = 'maximo', low_name = 'minimo',
@@ -43,7 +45,7 @@ class FueraDeHorario(Reporte):
             'plotUsuarios', 'plotHorarios', 'verbose',buttons=[OKButton, CancelButton]
             )
     
-    
+    ## Permite obtener los usuarios que usaron internet en horarios no permitidos
     def obtenerInfractores(self,desde,hasta):
 
         l = self.obtenerRequests(desde,hasta)

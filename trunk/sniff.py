@@ -413,7 +413,7 @@ class HTTPAssembler(object):
                 idR =  self.conversaciones[cuadruplaRequest].terminada()
                 
                 if not (idR is None) :
-                    self.noHTTP.agregarID(idR,cuadruplaRequest)
+                        self.noHTTP.agregarID(idR,cuadruplaRequest)
                 
                 
                 del self.conversaciones[cuadruplaRequest]

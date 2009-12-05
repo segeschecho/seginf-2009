@@ -71,7 +71,7 @@ class Ventana(HasTraits):
             resizable=True,
             title="ReporTool",
              )
-
+    directorio = Directory()
     def _ingresarComandos_fired(self):
 
         Shell().edit_traits()
@@ -126,28 +126,19 @@ class Ventana(HasTraits):
 
         
         if self.formato in ('html','ambos'):
-            from plasTeX.TeX import TeX
-            from plasTeX.Renderers.XHTML import Renderer
-            tex =TeX()
+            archivo = self.directorio + "auxiliarTOHTML.tex"
+            fe = open(archivo,'w')
             texto = documento%res
-            
             texto=texto.replace("'a", "\\'a")
             texto=texto.replace("'e", "\\'e")
             texto=texto.replace("'i", "\\'i")
             texto=texto.replace("'o", "\\'o")
             texto=texto.replace("'u", "\\'u")
-            #texto = unicode(texto,'utf-8')
-            tex.input(texto)
-            outdir=self.directorioSalidaDeHTML
-            dire = os.getcwdu()
-            #FIXME: BORRAR el contenido de este directorio (salvo pdf)
-            if not os.path.isdir(outdir):
-               os.makedirs(outdir)
-        
-            os.chdir(outdir)
-            r = Renderer()
-            r.render(tex.parse())
-            os.chdir(dire)
+            
+            fe.write(texto)
+            fe.close()
+            print os.popen('./plasTeX/plastex %s -d %s'%(archivo,self.directorioSalidaDeHTML)).read()
+            
         progress.update(len(seleccionados)+3)
         
         del res
@@ -235,7 +226,7 @@ configuradores=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12]
 
 
 
-v = Ventana(scripts=configuradores,desde = date(2009,1,1), hasta = date(2010,1,1))
+v = Ventana(scripts=configuradores,desde = date(2009,1,1), hasta = date(2010,1,1),directorio=directorio)
 v.configure_traits()
 
 for filename in os.listdir(directorio):

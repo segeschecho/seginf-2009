@@ -21,6 +21,7 @@ from contentType import ContentType
 from nonHTTP import NonHTTP
 from evolucion import EvolucionMensual
 from heuristica import Heuristica
+from traficoEnGral import TraficoEnGral
 
 
 class Configurador(HasTraits):
@@ -181,8 +182,10 @@ ev = EvolucionMensual(directorio = directorio)
 c10 = Configurador(script = ev, nombre = "Evolucion mensual", descripcion = "Muestra como varia el trafico mensualmente para los sitios seleccionados")
 he = Heuristica(directorio = directorio, categoria = 'Sexo', archivo = './heuristicas/sex.txt')
 c11 = Configurador(script = he, nombre = "Heuristica sexo", descripcion = "Realiza una busqueda heuristica para detectar visitas a paginas de sexo")
+tg = TraficoEnGral(directorio=directorio)
+c12 = Configurador(script = tg, nombre="Sitios con mas Trafico", descripcion = "Muestra los sitios con mas trafico en el periodo seleccionado",)
 
-v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11],desde = date(2009,1,1), hasta = date(2010,1,1))
+v = Ventana(scripts=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11, c12],desde = date(2009,1,1), hasta = date(2010,1,1))
 
 v.configure_traits()
 

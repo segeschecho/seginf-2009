@@ -22,7 +22,6 @@ class ContentType(Reporte):
     plotPorTexto = Bool
     plotPorMultipart = Bool
     plotPorUsuario = Bool
-    plotPorUsuario = Bool
     usuariosTop = Range(value=5,low=1,high=10)
     sitiosTop  = Range(value=5,low=1,high=10)
     view = View('plotPorTrafico',
@@ -32,7 +31,6 @@ class ContentType(Reporte):
                 'plotPorVideo',
                 'plotPorTexto',
                 'plotPorMultipart',
-                'plotPorUsuario',
                 'plotPorUsuario',
                 'usuariosTop',
                 'sitiosTop',

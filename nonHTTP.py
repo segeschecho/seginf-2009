@@ -146,7 +146,6 @@ class NonHTTP(Reporte):
 
     def graficar(self, distribucionTrafico, nombrePng):
         nombre = self.directorio + nombrePng
-        print nombre
         CairoPlot.pie_plot(nombre, distribucionTrafico, 800, 500,shadow = True, gradient = True)
         return nombre
 

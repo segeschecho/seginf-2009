@@ -42,10 +42,11 @@ class Heuristica(Reporte):
             dic = matches[each]
             for mensaje in reqsPorUsuario[each]:
                 for palabra in palabras:
-                    if palabra in mensaje.body or palabra in mensaje.uri or \
-                       ('host' in mensaje.headers and palabra in mensaje.headers['host']):
+                    c = mensaje.body.count(palabra) + mensaje.uri.count(palabra) + \
+                        mensaje.headers['host'].count(palabra) if 'host' in mensaje.headers else 0
+                    if c>0:
                         
-                        dic[palabra] +=1
+                        dic[palabra] +=c
         
 
         #Obtengo cantidad de responses sospechosos
@@ -54,12 +55,14 @@ class Heuristica(Reporte):
 
             for mensaje in respsPorUsuario[each]:
                 for palabra in palabras:
-                    if palabra in mensaje.body:
-                        dic[palabra] +=1
+                    c = mensaje.body.count(palabra)
+                    if c > 0:
+                        dic[palabra] +=c
 
                         
         #Para cada usuario grafico las 5 palabras que mas matchearon
         self.render.chapter('Matches por usuarios para la categoria %s'%self.categoria)
+        self.render.texto('Nota: La busqueda es heuristica, por lo cual pueden existir falsos positivos\n')
         if len(matches) == 0 or all((len(matches[x])==0 for x in matches)):
             self.render.texto('No hubo ningun match para la categoria %s'%self.categoria)
             return self.render.generarOutput()

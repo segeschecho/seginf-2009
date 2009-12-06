@@ -18,8 +18,11 @@ class NonHTTP(Reporte):
     plotTraficoPorUsuario = Bool(True)
     plotClientes = Bool(True)
     cantInfractores = Range(value=5,low=1,high=10)
+    plotHost = Bool(True)
 
-    view = View('verbose', 'plotTraficoPorUsuario', 'cantInfractores', 'plotClientes', buttons=[OKButton, CancelButton])
+    #directorio = "tmp/reporToolTemp"
+
+    view = View('verbose', 'plotTraficoPorUsuario', 'cantInfractores', 'plotClientes', 'plotHost', buttons=[OKButton, CancelButton])
 
     
     def ejecutar(self,desde,hasta):
@@ -29,8 +32,11 @@ class NonHTTP(Reporte):
         self.render.negrita("Periodo: %s - %s"%(desde,hasta))
         self.render.nuevaLinea()
         distribucionTrafico = self.obtenerDistribucionTrafico(desde,hasta)
+        if distribucionTrafico["total"] == 0:
+            self.render.negrita("No hubo trafico de ning'un tipo")
+            return self.render.generarOutput()
         self.render.section("Distribucion del tr'afico seg'un protocolo de aplicaci'on")
-        self.render.figure(self.graficar(distribucionTrafico["trafico"], "/Distribucion_trafico.png"))
+        self.render.figure(self.graficar(distribucionTrafico["trafico"], "/DistribucionTrafico.png"))
         infractores = self.obtenerInfractores(distribucionTrafico)
         if not distribucionTrafico["huboInfracciones"]:
             self.render.negrita("No hubo usuarios que utilizaran SSH")
@@ -46,9 +52,11 @@ class NonHTTP(Reporte):
             if self.plotTraficoPorUsuario:
                 masInfractores = self.obtenerLosMasInfractores(infractores, self.cantInfractores)
                 self.render.section("Distribuci'on de tr'afico seg'un protocolo de aplicaci'on por usuario")
-                self.render.negrita("Se muestran los gr'aficos para los %s usuarios mas infractores"%self.cantInfractores)
+                self.render.negrita("Se muestran los gr'aficos para (a lo sumo) los %s usuarios mas infractores"%self.cantInfractores)
                 self.graficarVarios(masInfractores)
-        
+            if self.plotHost:
+                self.render.section("Distribuci'on de tr'afico SSH seg'un host")
+                self.render.figure(self.graficar(distribucionTrafico["hostSSH"],"/DistribucionHostSSH.png"))
                 
         return self.render.generarOutput()
 
@@ -68,6 +76,7 @@ class NonHTTP(Reporte):
         requestTLS = 0
         requestSSL = 0
         requestHTTP = 0
+        hostSSH = dict()
         huboInfracciones = False
         a = self.obtenerRequestsNoHTTP(desde,hasta)
         for each in a:
@@ -76,6 +85,7 @@ class NonHTTP(Reporte):
                 huboInfracciones = True
                 requestSSH+=1
                 self.obtenerCliente(each.body,clientes)
+                self.obtenerHost(each, hostSSH)
                 self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"traficoSSH")
             else:
                 if self.esSSL(each.body):
@@ -118,7 +128,7 @@ class NonHTTP(Reporte):
                         requestTLS+=1
                         self.agregarTrafico(traficoPorUsuario,each.ipDestino,"traficoTLS")
                     else:
-                        self.agregarTrafico(traficoPorUsuario,each.ipOrigen,"otros")
+                        self.agregarTrafico(traficoPorUsuario,each.ipDestino,"otros")
 
                 
         trafico["traficoSSH"] = requestSSH
@@ -126,14 +136,17 @@ class NonHTTP(Reporte):
         trafico["traficoTLS"] = requestTLS
         trafico["traficoHTTP"] = requestHTTP
         trafico["otros"] = requestTotales - requestSSH - requestSSL - requestHTTP - requestTLS
+        distribucionTrafico["total"] = requestTotales
         distribucionTrafico["trafico"] = trafico
         distribucionTrafico["clientes"] = clientes
         distribucionTrafico["traficoPorUsuario"] = traficoPorUsuario
         distribucionTrafico["huboInfracciones"] = huboInfracciones
+        distribucionTrafico["hostSSH"] = hostSSH
         return distribucionTrafico
 
     def graficar(self, distribucionTrafico, nombrePng):
         nombre = self.directorio + nombrePng
+        print nombre
         CairoPlot.pie_plot(nombre, distribucionTrafico, 800, 500,shadow = True, gradient = True)
         return nombre
 
@@ -172,3 +185,15 @@ class NonHTTP(Reporte):
             clientes[cliente]= clientes[cliente] + 1
         else:
             clientes[cliente] = 1
+
+    def obtenerHost(self, request, hosts):
+        id = request.request
+        s = get_session()
+        query = s.query(MensajeHTTP).filter(MensajeHTTP.id == id)
+        mensajeConnect = query.all()[0]
+        host = mensajeConnect.headers["host"]
+        if host in hosts:
+            hosts[host]= hosts[host] + 1
+        else:
+            hosts[host] = 1
+        

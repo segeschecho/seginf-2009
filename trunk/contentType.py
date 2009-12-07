@@ -248,7 +248,7 @@ class ContentType(Reporte):
             texto += "\\end{enumerate}\n"
             seccion.texto(texto)
             
-            print texto
+
             
         else:
             seccion.section("Trafico de " + strTipoDeTrafico + " por usuario")

@@ -36,7 +36,7 @@ class Heuristica(Reporte):
             respsPorUsuario[each.ipDestino].append(each)
 
         matches = defaultdict(lambda:defaultdict(lambda:0))
-        print palabras
+       
         #Obtengo cantidad requests sospechosas
         for each in reqsPorUsuario:
             dic = matches[each]
@@ -77,10 +77,9 @@ class Heuristica(Reporte):
                                 else -1 if dic[x] > dic[y] \
                                 else 0)
                 candidatas = l[0:5]
-                print 'matches',matches
-                print 'l',l
+
                 data = dict(((x,dic[x]) for x in candidatas))
-                print data
+
                 self.render.section('Matches de la categoria %s para %s'%(self.categoria, each))
                 self.render.itemize(data, 'matches')
                 nombre = self.directorio + ('/matches%s%s.png'%(self.categoria.replace(' ',''),each.replace('.','')))

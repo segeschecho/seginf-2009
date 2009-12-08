@@ -15,12 +15,12 @@ En las siguientes secciones daremos una breve descripción de los reportes por no
 Los siguientes son los reportes incluidos con reporTool
 
 \subsection{Reporte de horario laboral}
-Este reporte permite analizar el tráfico discriminandolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de horar o solo mostrar el porcentaje en infracción.
+Este reporte permite analizar el tráfico discriminandolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de hora o solo mostrar el porcentaje en infracción.
 
 Ademas puede mostrar la distribución del uso de internet a lo largo de las distintas horas del día.
 
 \subsection{Reporte por blacklists}
-Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el trafico buscando visitas a alguno de esos dominios. Es en verdad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas blacklists, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
+Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en verdad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas blacklists, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
 
 Si bien reporTool trae unos archivos de blacklists para ciertas categorias, es fácil modificar esas blacklist, o reemplazarlas por otras, crear un reporte nuevo que trabaje con blacklists de otras categorias.
 
@@ -35,13 +35,23 @@ Los siguientes son sitios donde es posible descargar blacklists de distintas cat
 \item \verb_http://urlblacklist.com/?sec=download_
 \end{itemize}
 
-Este reporte puede generar graficos de cantidad de infracciones por usuarios, que porcenteja del trafico por usuario y total esta en infracción, cuales son los sitios de la blacklist mas visitados, entre otras cosas.
+Este reporte puede generar graficos de cantidad de infracciones por usuarios, que porcenteja del tráfico por usuario y total esta en infracción, cuales son los sitios de la blacklist mas visitados, entre otras cosas.
 
 \subsection{Reporte de tráfico AJAX}
 %TODO: sergio completa esto
 
 \subsection{Reporte por content type}
-%TODO: tleye completa esto
+En este reporte podemos ver el tipo de contenido del tráfico, basicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver mas en detalle que hace cada usuario.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.4]{./figuras/multimedia.png}
+\caption{Captura de pantalla de reporTool}
+\end{figure}
+
+
+Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las mas interesantes para mostrar en el reporte.
+Igualmente el sniffer no escapa a la posibilidad de querer hacer algunas de estas consultas y por eso tenemos el modo interactivo.
 
 \subsection{Reporte por tráfico de nivel de aplicación}
 %TODO: victoria complete esto por favor :D
@@ -50,7 +60,7 @@ Este reporte puede generar graficos de cantidad de infracciones por usuarios, qu
 %TODO: sergio completa esto, o si queres lo hago yo, pero comete un paty
 
 \subsection{Reporte de seguimiento}
-Este reporte permite elegir hasta 5 sitios y analizar la evolución de la cantidad de visitas y de trafico mes a mes para estos sitios, a lo largo de un periodo de tiempo determinado.
+Este reporte permite elegir hasta 5 sitios y analizar la evolución de la cantidad de visitas y de tráfico mes a mes para estos sitios, a lo largo de un periodo de tiempo determinado.
 
 \subsection{Reporte por heuristica}
 Este reporte puede pensarse de alguna forma como un complemento para el reporte por blacklists. El mismo utiliza un archivo donde se definen ciertas keywords (por ejemplo, keywords sobre apuestas: poker, black jack, casino, etc) que son buscadas en las requests y en los responses. El reporte muestra luego para que usuarios se encontraron matches, asi como cuales fueron los principales matches.

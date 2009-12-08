@@ -29,7 +29,7 @@ from traficoEnGral import TraficoEnGral
 #from reporteTrucho import ReporteTrucho
 
 # Clase que permite configurar las distintas opciones de los reportes
-# Envueve aun reporte
+# Envuelve aun reporte
 class Configurador(HasTraits):
     script = Instance(Reporte)
     nombre = Str("sin nombre")
@@ -112,7 +112,7 @@ class Ventana(HasTraits):
 
 
         #DEBUG        
-        fe = open('fede.tex','w')
+        fe = open('debug.tex','w')
         fe.write(unicode(documento%res))
         fe.close()
         
@@ -126,7 +126,7 @@ class Ventana(HasTraits):
 
         
         if self.formato in ('html','ambos'):
-            archivo = self.directorio + "auxiliarTOHTML.tex"
+            archivo = self.directorio + "/auxiliarTOHTML.tex"
             fe = open(archivo,'w')
             texto = documento%res
             texto=texto.replace("'a", "\\'a")

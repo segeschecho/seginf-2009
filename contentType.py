@@ -90,7 +90,7 @@ class ContentType(Reporte):
     ContentTypeAudio =  [unicode('audio')]    
     ContentTypeImagen = [unicode('image')]    
     ContentTypeComp =   [unicode('multipart')]    
-    ContentTypeTexpto =  [unicode('text')]    
+    ContentTypeTexto =  [unicode('text')]    
     ContentTypeVideo = [unicode('video')]
         
     ########################################################################################################################

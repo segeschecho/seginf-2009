@@ -60,7 +60,7 @@ class Ventana(HasTraits):
     scripts = List(Configurador)
     generarReporte = Button(label='Generar')
     salida = File('reporte.pdf')
-    directorioSalidaDeHTML = Directory(value='./informe')
+    directorioSalidaDeHTML = Directory('./informe')
     ingresarComandos = Button(label='Modo interactivo')
     formato = Enum(['pdf','html','ambos'])
     view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), 'formato',
@@ -71,7 +71,7 @@ class Ventana(HasTraits):
             resizable=True,
             title="ReporTool",
              )
-    directorio = Directory()
+    directorio = None
     def _ingresarComandos_fired(self):
 
         Shell().edit_traits()
@@ -137,7 +137,10 @@ class Ventana(HasTraits):
             
             fe.write(texto)
             fe.close()
-            print os.popen('./plasTeX/plastex %s -d %s'%(archivo,self.directorioSalidaDeHTML)).read()
+            print archivo
+            print self.directorioSalidaDeHTML
+            out = self.directorioSalidaDeHTML.replace(" ", "\\ ")
+            print os.popen('./plasTeX/plastex -d %s %s'%(out,archivo)).read()
             
         progress.update(len(seleccionados)+3)
         

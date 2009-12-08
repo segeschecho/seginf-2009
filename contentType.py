@@ -90,7 +90,7 @@ class ContentType(Reporte):
     ContentTypeAudio =  [unicode('audio')]    
     ContentTypeImagen = [unicode('image')]    
     ContentTypeComp =   [unicode('multipart')]    
-    ContentTypeTexto =  [unicode('text')]    
+    ContentTypeTexpto =  [unicode('text')]    
     ContentTypeVideo = [unicode('video')]
         
     ########################################################################################################################
@@ -291,7 +291,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAplicacion:
                             responsesDeAplicacion.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses
                 #requestsDeAplicacion = []
@@ -311,7 +311,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeAudio:
                             responsesDeAudio.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses            
                 for each in responsesDeAudio:
@@ -330,7 +330,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeImagen:
                             responsesDeImagen.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses            
                 for each in responsesDeImagen:
@@ -349,7 +349,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeComp:
                             responsesDeMultipart.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses            
                 for each in responsesDeMultipart:
@@ -368,7 +368,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeTexto:
                             responsesDeTexto.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses            
                 for each in responsesDeTexto:
@@ -387,7 +387,7 @@ class ContentType(Reporte):
                         #me fijo si el tipo es del que quiero
                         if (each.headers['content-type'].split(';')[0]).split('/')[0] in self.ContentTypeVideo:
                             responsesDeVideo.append(each)
-                        #print each.headers['content-type'].__repr__()
+                        
                  
                 # Obtenemos los request asociados a esos responses            
                 for each in responsesDeVideo:
@@ -417,9 +417,7 @@ class ContentType(Reporte):
             res = "\\chapter{Tipo de trafico}\n"
             res += "No hay tr'afico"
 
-        print res
-
-
+        
         return res
         
 

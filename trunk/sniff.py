@@ -253,9 +253,9 @@ class NoHTTPAssembler(object):
         self.conexiones[cuadrupla] = ConexionPotencialmenteNoHTTP(cuadrupla)
 
     def agregarID(self,idr,cuadrupla):
-        print "agrego ID"
+        
         if cuadrupla in self.conexiones:
-            print "funcione"
+
             self.conexiones[cuadrupla].agregarID(idr)
         
     #FIXME: hay q agarrar las cosas luego de un connect!    

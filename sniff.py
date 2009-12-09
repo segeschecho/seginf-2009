@@ -16,6 +16,7 @@ except:
     pass
 
 STANDARD_PORT = 8080
+STANDARD_IP = None
 DEFAULT_CAP ='captura.cap'
 
 
@@ -36,15 +37,19 @@ class Sniffer(object):
             each(pkt)
 
 class fromFileHTTPSniffer(Sniffer):
-    def __init__(self,capfile,port=STANDARD_PORT):
+    def __init__(self,capfile,port=STANDARD_PORT,ipProxy=None):
         self.callbacks=[]
         self.port = port
+        self.ipProxy=ipProxy
         
         paquetes = rdpcap(capfile)
  
         self.paquetes = paquetes.filter(lambda paq:\
                         paq.haslayer(TCP) and (paq.getlayer(TCP).dport == self.port or \
-                        paq.getlayer(TCP).sport == self.port))
+                        paq.getlayer(TCP).sport == self.port)
+                        and paq.haslayer(IP) and (self.ipProxy == None or \
+                        paq.getlayer(IP).dst == self.ipProxy or \
+                        paq.getlayer(IP).src == self.ipProxy))
             
     def sniffear(self):
         for pkt in self.paquetes:
@@ -52,15 +57,17 @@ class fromFileHTTPSniffer(Sniffer):
     
 # Clase que permite sniffear trafico tcp al puerto donde atiende el proxy
 class HTTPandHTTPSSniffer(Sniffer):
-    def __init__(self,port=STANDARD_PORT):
+    def __init__(self,port=STANDARD_PORT,ipProxy=None):
         self.callbacks=[]
         self.port = port
+        self.ipProxy = ipProxy
         
     def sniffear(self,count = None):
+        lfilter = lambda x: True if self.ipProxy == None else (x.getlayer(IP).src == self.ipProxy or x.getlayer(IP).dst == self.ipProxy)
         if count == None:
-            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port))
+            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port), lfilter=lfilter)
         else:
-            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port), count = count)
+            sniff(prn=self.callCallbacks, filter='tcp port %s'%(self.port), count = count, lfilter=lfilter)
 
 #Clase que guarda las response y request que vamos capturando en una base de datos
 class PersistidorHTTP(object):
@@ -204,15 +211,15 @@ class ConexionPotencialmenteNoHTTP(object):
             
     
 class PersistidorNoHTTP(object):
-    
-    def __init__(self,port=STANDARD_PORT):
+    def __init__(self,port=STANDARD_PORT,ipProxy=None):
         self.port = port
+        self.ipProxy = ipProxy
     
     def persistir(self, mensaje):
 
         s = get_session()
         ipOrigen, ipDestino, portOrigen, portDestino = mensaje.cuadrupla
-        if portOrigen == self.port:
+        if portOrigen == self.port and (self.ipProxy == None or ipOrigen == self.ipProxy):
             s.add(ResponseNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime))
         else:
             s.add(RequestNoHTTP(ipOrigen, ipDestino, portOrigen, portDestino,mensaje.body,mensaje.datetime,mensaje.idr))
@@ -221,8 +228,9 @@ class PersistidorNoHTTP(object):
 
 class NoHTTPAssembler(object):
     
-    def __init__(self,port=STANDARD_PORT):
+    def __init__(self,port=STANDARD_PORT,ipProxy=None):
         self.port = port
+        self.ipProxy = ipProxy
         
         self.conexiones = {}
         
@@ -230,7 +238,7 @@ class NoHTTPAssembler(object):
         
         self.ultimoPaquete = None
         
-        self.persistidorNoHTTP = PersistidorNoHTTP(self.port)
+        self.persistidorNoHTTP = PersistidorNoHTTP(self.port,self.ipProxy)
     
     def _get_cuadrupla(self,pkt):
         pktIP = pkt.getlayer(IP)
@@ -262,7 +270,8 @@ class NoHTTPAssembler(object):
         if cuadrupla in self.conexiones:
 
             if pkt.lastlayer().haslayer(Raw):
-                if not self.conexiones[cuadrupla].conBody and cuadrupla[3] == self.port :
+                if not self.conexiones[cuadrupla].conBody and cuadrupla[3] == self.port and \
+                (cuadrupla[1] == self.ipProxy or self.ipProxy == None):
                     desti,ori,des,org = cuadrupla
                     cuadrupla2 = (ori,desti,org,des)
                     if cuadrupla2 not in self.conexiones:
@@ -295,9 +304,10 @@ class HTTPAssembler(object):
     
 
 
-    def __init__(self,noHTTP,port=STANDARD_PORT):
+    def __init__(self,noHTTP,port=STANDARD_PORT,ipProxy = None):
         # port -> Puerto del proxy al que le vamos a prestar atencion
         self.port = port
+        self.ipProxy = ipProxy
         
         self.conexiones = {}
         # HACK: esta variable la usamos por si corremos el sniffer en la misma
@@ -326,15 +336,19 @@ class HTTPAssembler(object):
         
         # Chequeamos que el paquete sea desde o hacia el proxy, sino lo ignoramos
         pktTCP = pkt.getlayer(TCP)
+        pktIP = pkt.getlayer(IP)
         portOrigen = pktTCP.sport
         portDestino = pktTCP.dport
-        if not(portOrigen == self.port or portDestino == self.port):
+        ipOrigen = pktIP.src
+        ipDestino = pktIP.dst
+        if not(portOrigen == self.port or portDestino == self.port) or \
+        not (self.ipProxy == None or self.ipProxy == ipOrigen or self.ipProxy == ipDestino):
             return
         
         self.noHTTP.nuevo_paquete(pkt)
         
         #Si viene del proxy es un response (potencialmente), sino es un request
-        if portOrigen == self.port:
+        if portOrigen == self.port and (self.ipProxy == None or self.ipProxy == ipOrigen):
             self.response(pkt)
         else:
             self.request(pkt)
@@ -470,6 +484,8 @@ parser = OptionParser(usage=usage)
 
 parser.add_option("-p", "--port", dest="proxy_port", default=STANDARD_PORT,
                   help="Puerto donde atiende el proxy", metavar="PORT")
+parser.add_option("-i", "--ip", dest="proxy_ip", default=STANDARD_IP,
+                  help="ip del proxy", metavar="IP")                  
 parser.add_option("-d", "--dump", dest="dump_file",
                   help="Generar un archivo con las capturas", metavar="DUMP")
 parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true",
@@ -487,19 +503,20 @@ parser.add_option("-f", "--from-file", dest="from_file",
 
     
 puerto = int(options.proxy_port)
+ip = options.proxy_ip
 
 if options.from_file:
     try:
-        hs = fromFileHTTPSniffer(options.from_file,port=puerto)
+        hs = fromFileHTTPSniffer(options.from_file,port=puerto,ipProxy=ip)
     except:
         print "imposible abrir el archivo %s"%options.from_file
         sys.exit(-1)
 else:
-    hs = HTTPandHTTPSSniffer(port=puerto)       
+    hs = HTTPandHTTPSSniffer(port=puerto,ipProxy=ip)       
 
 
-hn = NoHTTPAssembler(port = puerto)
-ha = HTTPAssembler(hn,port=puerto)
+hn = NoHTTPAssembler(port = puerto,ipProxy=ip)
+ha = HTTPAssembler(hn,port=puerto,ipProxy=ip)
 #hs.addCallback(hn.nuevoPaquete)
 
 if options.dump_file:

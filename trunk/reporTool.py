@@ -230,6 +230,15 @@ configuradores=[c,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12]
 
 
 v = Ventana(scripts=configuradores,desde = date(2009,1,1), hasta = date(2010,1,1),directorio=directorio)
+
+def agregarReporte(reporte,nombre):
+    global v
+    try:
+        v.scripts.append(Configurador(nombre=nombre,script=reporte))
+    except Exception, e:
+        print e
+    
+
 v.configure_traits()
 
 for filename in os.listdir(directorio):

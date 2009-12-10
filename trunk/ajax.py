@@ -35,6 +35,7 @@ class Ajax(Reporte):
                 'plotDominiosPorUsuario',
                 'usuariosTop',
                 'sitiosTop',
+                buttons=[OKButton, CancelButton]
                 )
     #Para escribir la seccion del reporte
     seccion = LatexFactory()

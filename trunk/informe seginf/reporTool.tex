@@ -1,3 +1,5 @@
+%TODO: hablar de que se puede hacer un spoof attack
+%TODO: hablar de que solo debe ser usado por el admin
 \chapter{Generación de reportes}
 \section{ReporTool}
 La segunda parte del trabajo consistió en la realización de reportes sobre el tráfico capturado por el sniffer.
@@ -43,15 +45,8 @@ Este reporte puede generar graficos de cantidad de infracciones por usuarios, qu
 \subsection{Reporte por content type}
 En este reporte podemos ver el tipo de contenido del tráfico, basicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver mas en detalle que hace cada usuario.
 
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.4]{./figuras/multimedia.png}
-\caption{Tipos de tráfico}
-\end{figure}
-
-
 Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las mas interesantes para mostrar en el reporte.
-Igualmente el sniffer no escapa a la posibilidad de querer hacer algunas de estas consultas y lo podemos hacer en el modo interactivo (o extendiendo el reporte).
+Igualmente es factible hacer algunas de estas consultas mediante el modo interactivo (o extendiendo el reporte).
 
 \subsection{Reporte por tráfico de nivel de aplicación}
 %TODO: victoria complete esto por favor :D
@@ -240,3 +235,32 @@ Finalmente si ejecutamos reporTool, vemos que el reporte ya esta listo para ejec
 \centering
 \includegraphics[scale=0.5]{./figuras/reporteAgregado.png}
 \end{figure}
+
+De esta forma el reporte queda agregado. Si se quiere agregar un reporte para una sesión nada mas, se puede utilizar la consola del modo interactivo. Sin modificar el código de reporTool usarse la funcion agregarReporte que recibe una instancia de reporte (en el ejemplo una instancia de ReporteTrucho) y el nombre que se le quiere dar al reporte, y lo agrega a la lista de reportes de la interfaz grafica. Este es un modo rápido de ir probando distintos reportes, los cuales se puede, incluso, definir en la consola.
+
+Veamos como usamos esto para utilizar al reporteTrucho que definimos antes:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}\\
+\hlstd{Python\ }\hlnum{2.6.2\ }\hlstd{}\hlsym{(}\hlstd{release26}\hlsym{{-}}\hlstd{maint}\hlsym{,\ }\hlstd{Apr\ }\hlnum{19\ 2009}\hlstd{}\hlsym{,\ }\hlstd{}\hlnum{01}\hlstd{}\hlsym{:}\hlstd{}\hlnum{56}\hlstd{}\hlsym{:}\hlstd{}\hlnum{41}\hlstd{}\hlsym{)}\hspace*{\fill}\\
+\hlstd{}\hlsym{{[}}\hlstd{GCC\ }\hlnum{4.3.3}\hlstd{}\hlsym{{]}\ }\hlstd{on\ linux2\hspace*{\fill}\\
+Type\ }\hlstr{``help''}\hlstd{}\hlsym{,\ }\hlstd{}\hlstr{``copyright''}\hlstd{}\hlsym{,\ }\hlstd{}\hlstr{``credits''}\hlstd{\ }\hlkwa{or\ }\hlstd{}\hlstr{``license''}\hlstd{\ }\hlkwa{for\ }\hlstd{more\ information}\hlsym{.}\hspace*{\fill}\\
+\hlstd{}\hlsym{$>$$>$$>$\ }\hlstd{}\hlkwa{from\ }\hlstd{reporteTrucho\ }\hlkwa{import\ }\hlstd{ReporteTrucho}\hspace*{\fill}\\
+\hlsym{$>$$>$$>$\ }\hlstd{r\ }\hlsym{=\ }\hlstd{}\hlkwd{ReporteTrucho}\hlstd{}\hlsym{()}\hspace*{\fill}\\
+\hlstd{}\hlsym{$>$$>$$>$\ }\hlstd{}\hlkwd{agregarReporte}\hlstd{}\hlsym{(}\hlstd{r}\hlsym{,\ }\hlstd{}\hlstr{``Reporte\ trucho''}\hlstd{}\hlsym{)}\hlstd{}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+
+\end{minipage}}
+
+Con solo hacer esto, ya tenemos un nuevo reporte disponible.
+
+\section{Algunas consideraciones de seguridad sobre ReporTool}
+ReporTool es una herramienta pensada para ser usada por un usuario administrador, ya que la misma tiene acceso a la base de datos, y si la pudiera usar cualquier usuario, podría modificarla o borrarla a su antojo.
+
+Otra consideración que hay que hacer, es que al identificar a los usuarios por su IP un usuario malicioso podría inculpar a otro usuario inocente. Para esto no tendría mas que generar requests a sitios prohibidos por la blacklist spoofeando la IP de la victima. Entonces al correr reporTool, en el reporte aparecerá que la victima estuvo accediendo a sitios indebidos, cuando en verdad eso es falso.
+
+

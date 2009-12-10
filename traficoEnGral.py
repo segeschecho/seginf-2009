@@ -2,6 +2,7 @@ from persistencia import get_session, MensajeHTTP, RequestHTTP, ResponseHTTP
 from latex import LatexFactory #para generar el codigo en latex
 from enthought.traits.api import *
 from enthought.traits.ui.api import *
+from enthought.traits.ui.menu import OKButton, CancelButton
 from reporte import Reporte
 import CairoPlot #para dibujar los graficos del reporte
 import os
@@ -13,7 +14,8 @@ class TraficoEnGral(Reporte):
     sitiosTop = Range(value=5,low=1,high=10)
     
     view = View('plotSitiosTop',
-                'sitiosTop')
+                'sitiosTop',
+                buttons=[OKButton, CancelButton])
     
     #Para escribir la seccion del reporte
     seccion = LatexFactory()
@@ -81,8 +83,14 @@ class TraficoEnGral(Reporte):
         #ahora escribo esto en un latex
         self.seccion.chapter("Sitios con mas trafico")
         self.seccion.texto("En este parte se mostrar'an los sitios con mas trafico \
-                   desde la fecha deinicio seleccionada hasta la fecha final.")
-        #copio los elementos que me interesan de la lista
+                   desde la fecha de inicio seleccionada hasta la fecha final.")
+
+
+        if listConsumo == []:
+            self.seccion.texto("\nNo hubo trafico alguno")
+            return self.seccion.generarOutput()
+
+        #copio los elementos que me interesan de la lista            
         listTop = listConsumo[:largo]
         self.seccion.itemize(listTop, "Bytes")
         

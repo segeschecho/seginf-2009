@@ -103,6 +103,11 @@ class EvolucionMensual(Reporte):
         ###########################################################
         nombre = self.directorio+'/seguimiento_requests.png'
         
+        todosNull = all((all((x==0 for x in each)) for each in cosa))
+        if todosNull:
+            self.render.texto("No hubo trafico para ninguno de estos sitios")
+            return self.render.generarOutput()        
+        
         CairoPlot.dot_line_plot(nombre,cosa,800,
             	                600,series_colors=colors,h_labels = labels, axis = True, grid=True,
                                 v_labels = v_labels,dots=True, )

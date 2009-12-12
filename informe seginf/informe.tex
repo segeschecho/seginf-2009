@@ -131,9 +131,9 @@ El informe se organiza de la siguiente manera:
 El trabajo fue realizado y probado en Linux Mint 7: Gloria, el cual esta basado en Ubuntu Jaunty. Creemos que el software debería funcionar en otras distribuciones Linux sin problemas, no asi en windows, ya que scapy (una libreria de la cual hablaremos mas adelante) no se encuentra disponible para windows (aunque existe un port\footnote{http://trac.secdev.org/scapy/wiki/WindowsInstallationGuide} que supuestamente brinda casi todas las posibilidades de scapy en windows, no lo probamos).
 
 \section{Lenguaje de programación}
-Para la realización del proyecto utilizamos el lenguaje python, el cual varios miembros del grupo utilizamos. Consideramos que el desarrollo en este lenguaje es sencillo, lo cual permitia que el resto del grupo puede familiarizarse rapidamente con el, ya que no habia un lenguaje manejado por todos.
+Para la realización del proyecto utilizamos el lenguaje python, el cual varios miembros del grupo utilizamos. Consideramos que el desarrollo en este lenguaje es sencillo, lo cual permitía que el resto del grupo puede familiarizarse rápidamente con el, ya que no habia un lenguaje manejado por todos.
 
-Las ventaja principal que presenta es justamente que permite una velocidad alta para el desarrollo, sin embargo como contra la performance no es comparable a la que podriamos haber obtenido usando otro lenguaje como por ejemplo C++.
+Las ventaja principal que presenta es justamente que permite una velocidad alta para el desarrollo, sin embargo como contra la performance no es comparable a la que podríamos haber obtenido usando otro lenguaje como por ejemplo C++.
 
 \section{Base de datos}
 Para la realización del trabajo era necesario la utilización de una base de datos para poder almacenar el tráfico sniffeado y luego poder analizarlo. Por una cuestión de simplicidad se utilizó el motor sqlite, sin embargo es muy simple de cambiar, a fin de utilizar otro motor mas robusto como puede ser mySQL.
@@ -143,10 +143,10 @@ Para facilitarnos la interacción con la base de datos decidimos utilizar SQLAlch
 
 Definimos entonces las siguientes clases para hacer el mapeo a la base de datos:
 \begin{itemize}
-\item MensajeHTTP: Es la clase base de los mensajes HTTP. Posee las caracteristicas generales de los mensajes, ya sean requests, o responses; como pueden ser los headers, el body, direcciones ip o los puertos.
-\item RequestHTTP: Subclase de MensajeHTTP, guarda la uri, el metodo y el identificador del response asociado (si corresponde)
-\item ResponseHTTP: Subclase de MensajeHTTP, guarda el codigo de respuesta y el mensaje de status
-\item RequestNoHTTP: Clase que representa aquellos mensajes sniffeados que no corresponden a trafico HTTP (por ejemplo SSH, o HTTPS) y que provienen desde algun host hacia el proxy.
+\item MensajeHTTP: Es la clase base de los mensajes HTTP. Posee las características generales de los mensajes, ya sean requests, o responses; como pueden ser los headers, el body, direcciones ip o los puertos.
+\item RequestHTTP: Subclase de MensajeHTTP, guarda la uri, el método y el identificador del response asociado (si corresponde)
+\item ResponseHTTP: Subclase de MensajeHTTP, guarda el código de respuesta y el mensaje de status
+\item RequestNoHTTP: Clase que representa aquellos mensajes sniffeados que no corresponden a tráfico HTTP (por ejemplo SSH, o HTTPS) y que provienen desde algun host hacia el proxy.
 \item ResponseNoHTTP: Similar a la anterior, pero para los mensajes que provienen del proxy a un host de la red.
 \end{itemize}
 

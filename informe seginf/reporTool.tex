@@ -3,7 +3,7 @@
 \chapter{Generación de reportes}
 \section{ReporTool}
 La segunda parte del trabajo consistió en la realización de reportes sobre el tráfico capturado por el sniffer.
-Nosotros construimos una herramienta que denominamos reporTool. La misma permite realizar los distintos analisis de trafico (reportes) generando una salida en formato pdf o en formato html mediante una interfaz grafica.
+Nosotros construimos una herramienta que denominamos reporTool. La misma permite realizar los distintos análisis de tráfico (reportes) generando una salida en formato pdf o en formato html mediante una interfaz gráfica.
 
 \begin{figure}[H]
 \centering
@@ -24,12 +24,12 @@ Ademas puede mostrar la distribución del uso de internet a lo largo de las disti
 \subsection{Reporte por blacklists}
 Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en verdad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas blacklists, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
 
-Si bien reporTool trae unos archivos de blacklists para ciertas categorias, es fácil modificar esas blacklist, o reemplazarlas por otras, crear un reporte nuevo que trabaje con blacklists de otras categorias.
+Si bien reporTool trae unos archivos de blacklists para ciertas categorías, es fácil modificar esas blacklist, o reemplazarlas por otras, crear un reporte nuevo que trabaje con blacklists de otras categorías.
 
 Estas son las blacklists incluídas con reporTool:
 %TODO: listar las blackslists que se incluyen en la entrega
 
-Los siguientes son sitios donde es posible descargar blacklists de distintas categorias:
+Los siguientes son sitios donde es posible descargar blacklists de distintas categorías:
 \begin{itemize}
 \item \verb_http://squidguard.mesd.k12.or.us/_
 \item \verb_http://www.shallalist.de/_
@@ -37,13 +37,13 @@ Los siguientes son sitios donde es posible descargar blacklists de distintas cat
 \item \verb_http://urlblacklist.com/?sec=download_
 \end{itemize}
 
-Este reporte puede generar graficos de cantidad de infracciones por usuarios, que porcenteja del tráfico por usuario y total esta en infracción, cuales son los sitios de la blacklist mas visitados, entre otras cosas.
+Este reporte puede generar gráficos de cantidad de infracciones por usuarios, que porcenteja del tráfico por usuario y total esta en infracción, cuales son los sitios de la blacklist mas visitados, entre otras cosas.
 
 \subsection{Reporte de tráfico AJAX}
 %TODO: sergio completa esto
 
 \subsection{Reporte por content type}
-En este reporte podemos ver el tipo de contenido del tráfico, basicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver mas en detalle que hace cada usuario.
+En este reporte podemos ver el tipo de contenido del tráfico, básicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver mas en detalle que hace cada usuario.
 
 Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las mas interesantes para mostrar en el reporte.
 Igualmente es factible hacer algunas de estas consultas mediante el modo interactivo (o extendiendo el reporte).
@@ -57,17 +57,17 @@ Igualmente es factible hacer algunas de estas consultas mediante el modo interac
 \subsection{Reporte de seguimiento}
 Este reporte permite elegir hasta 5 sitios y analizar la evolución de la cantidad de visitas y de tráfico mes a mes para estos sitios, a lo largo de un periodo de tiempo determinado.
 
-\subsection{Reporte por heuristica}
+\subsection{Reporte por heurística}
 Este reporte puede pensarse de alguna forma como un complemento para el reporte por blacklists. El mismo utiliza un archivo donde se definen ciertas keywords (por ejemplo, keywords sobre apuestas: poker, black jack, casino, etc) que son buscadas en las requests y en los responses. El reporte muestra luego para que usuarios se encontraron matches, asi como cuales fueron los principales matches.
 
-Las blacklists solo encuentran requests a los dominios en ellos definidos, entonces es factible que un usuario pueda visitar alguna página que no esta en la blacklist pero que debería estarlo, o que incluso saltee el chequeo de las blacklists (por ejemplo navegando con la cache de google). La busqueda heuristica permite detectar estas cosas, al costo de posiblemente dar falsos positivos sobre el contenido de las visitas. Sin embargo puede ser una herramienta util para detectar usos indebidos.
+Las blacklists solo encuentran requests a los dominios en ellos definidos, entonces es factible que un usuario pueda visitar alguna página que no esta en la blacklist pero que debería estarlo, o que incluso saltee el chequeo de las blacklists (por ejemplo navegando con la cache de google). La búsqueda heurística permite detectar estas cosas, al costo de posiblemente dar falsos positivos sobre el contenido de las visitas. Sin embargo puede ser una herramienta útil para detectar usos indebidos.
 
 \section{Modo interactivo}
 Ademas de la posibilidad de realizar reportes, reporTool provee un mecanismo interactivo para realizar consultas a la base de datos. En vez de brindar una interfaz para simplemente ejecutar SQL en la base de datos, lo cual es posible con cualquier cliente de bases de datos; brindamos una consola python con ciertos elementos de alto nivel, brindados por el ORM que permiten interactuar con la base de datos.
 
-Para obtener una sesion, se debe utilizar el comando get\_session. Una vez que tenemos una sesion, podemos realizar queries sobre las clases que mapean a la base de datos (presentadas anteriormente) mediante la interfaz que provee sqlalchemy. 
+Para obtener una sesión, se debe utilizar el comando get\_session. Una vez que tenemos una sesión, podemos realizar queries sobre las clases que mapean a la base de datos (presentadas anteriormente) mediante la interfaz que provee sqlalchemy. 
 
-Para mas informacion se puede consultar:
+Para mas información se puede consultar:
 
 \begin{itemize}
 \item \verb<http://www.sqlalchemy.org/docs/05/session.html#querying<
@@ -116,11 +116,11 @@ Para mas información puede consultarse:
 \verb<http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html<
 
 \section{Agregado de nuevos reportes}
-ReporTool fue pensado para ser facilmente extensible, es decir que sea facil poder agregar nuevos reportes definidos por el usuario.
+ReporTool fue pensado para ser fácilmente extensible, es decir que sea fácil poder agregar nuevos reportes definidos por el usuario.
 
-Para poder definir un nuevo reporte, es necesario definir una clase que herede de Reporte. Esta misma debe implementar el metodo ejecutar que recibe un desde y un hasta, que son las fechas entre las cuales debe analizarse el tráfico.
+Para poder definir un nuevo reporte, es necesario definir una clase que herede de Reporte. Esta misma debe implementar el método ejecutar que recibe un desde y un hasta, que son las fechas entre las cuales debe analizarse el tráfico.
 
-Dicho metodo debe devolver un string latex, que es el que se utilizará para generar el pdf o el html correspondiente al reporte.
+Dicho método debe devolver un string latex, que es el que se utilizará para generar el pdf o el html correspondiente al reporte.
 
 Una vez definida esta clase, debe importarse en reporTool, crear una instancia, envolverla con un Configurador y agregar al configurador a la lista de configuradores.
  
@@ -158,13 +158,13 @@ Creamos un nuevo archivo llamado reporteTrucho.py, en el ponemos:
 Analicemos un poco el codigo:
 La primera línea importa la clase Reporte, para que el reporte que queremos definir pueda heredar de dicha clase.
 
-Luego se importa la clase LatexFactory que brinda algunas funciones para poder generar codigo latex mas facilmente.
+Luego se importa la clase LatexFactory que brinda algunas funciones para poder generar codigo latex mas fácilmente.
 
-Las línes 3 y 4 son necesarias para importar la libreria traits que permite generar luego de forma automatica la GUI para modificar el reporte.
+Las línes 3 y 4 son necesarias para importar la librería traits que permite generar luego de forma automática la GUI para modificar el reporte.
 
-Luego comienza la definición de la clase. Las dos primeras lineas de la definicion, establecen dos atributos que va a tener el reporte, un flag booleano que por default vale True y un rango que va del 1 al 10 y que por default comienza en 5. Estos atributos se podran luego modificar mediante la interfaz grafica.
+Luego comienza la definición de la clase. Las dos primeras lineas de la definición, establecen dos atributos que va a tener el reporte, un flag booleano que por default vale True y un rango que va del 1 al 10 y que por default comienza en 5. Estos atributos se podrán luego modificar mediante la interfaz gráfica.
 
-Luego se define el metodo ejecutar como dijimos anteriormente. En este caso se devuelve un capitulo latex con el titulo \textit{Reporte trucho} y un texto que muestra el valor del flag.
+Luego se define el método ejecutar como dijimos anteriormente. En este caso se devuelve un capítulo latex con el título \textit{Reporte trucho} y un texto que muestra el valor del flag.
 
 Ya tenemos definida la clase del nuevo reporte, vamos a agregarlo. En rerpoTool.py agregamos las siguientes lineas:
 
@@ -208,7 +208,7 @@ De esta manera, importamos nuestro reporte, para que este disponible.
 
 \end{minipage}}
 
-En este codigo, creamos la instancia de reporte, y lo wrappeamos en un configurador. Un configurador es lo que permite mostrar el nombre del reporte y los botones para seleccionar al reporte y para configurarlo.
+En este código, creamos la instancia de reporte, y lo wrappeamos en un configurador. Un configurador es lo que permite mostrar el nombre del reporte y los botones para seleccionar al reporte y para configurarlo.
 
 \framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
 
@@ -236,7 +236,7 @@ Finalmente si ejecutamos reporTool, vemos que el reporte ya esta listo para ejec
 \includegraphics[scale=0.5]{./figuras/reporteAgregado.png}
 \end{figure}
 
-De esta forma el reporte queda agregado. Si se quiere agregar un reporte para una sesión nada mas, se puede utilizar la consola del modo interactivo. Sin modificar el código de reporTool usarse la funcion agregarReporte que recibe una instancia de reporte (en el ejemplo una instancia de ReporteTrucho) y el nombre que se le quiere dar al reporte, y lo agrega a la lista de reportes de la interfaz grafica. Este es un modo rápido de ir probando distintos reportes, los cuales se puede, incluso, definir en la consola.
+De esta forma el reporte queda agregado. Si se quiere agregar un reporte para una sesión nada mas, se puede utilizar la consola del modo interactivo. Sin modificar el código de reporTool usarse la función agregarReporte que recibe una instancia de reporte (en el ejemplo una instancia de ReporteTrucho) y el nombre que se le quiere dar al reporte, y lo agrega a la lista de reportes de la interfaz gráfica. Este es un modo rápido de ir probando distintos reportes, los cuales se puede, incluso, definir en la consola.
 
 Veamos como usamos esto para utilizar al reporteTrucho que definimos antes:
 
@@ -261,6 +261,6 @@ Con solo hacer esto, ya tenemos un nuevo reporte disponible.
 \section{Algunas consideraciones de seguridad sobre ReporTool}
 ReporTool es una herramienta pensada para ser usada por un usuario administrador, ya que la misma tiene acceso a la base de datos, y si la pudiera usar cualquier usuario, podría modificarla o borrarla a su antojo.
 
-Otra consideración que hay que hacer, es que al identificar a los usuarios por su IP un usuario malicioso podría inculpar a otro usuario inocente. Para esto no tendría mas que generar requests a sitios prohibidos por la blacklist spoofeando la IP de la victima. Entonces al correr reporTool, en el reporte aparecerá que la victima estuvo accediendo a sitios indebidos, cuando en verdad eso es falso.
+Otra consideración que hay que hacer, es que al identificar a los usuarios por su IP un usuario malicioso podría inculpar a otro usuario inocente. Para esto no tendría mas que generar requests a sitios prohibidos por la blacklist spoofeando la IP de la víctima. Entonces al correr reporTool, en el reporte aparecerá que la víctima estuvo accediendo a sitios indebidos, cuando en verdad eso es falso.
 
 

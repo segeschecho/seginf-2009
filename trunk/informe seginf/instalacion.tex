@@ -1,0 +1,107 @@
+\chapter{Instalación y uso}
+A continuación daremos una guía para realizar la instalación del sniffer y de reporTool. En ambos casos, presentaremos los pasos para un sistema operativo similar a Ubuntu, con python 2.6 ya instalado (por defecto en ubuntu).
+
+\section{Instalación del sniffer}
+\begin{enumerate}
+\item Instalar easy\_install para python:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}\\
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{python}\hlsym{{-}}\hlstd{setuptools\ python}\hlsym{{-}}\hlstd{dev\ build}\hlsym{{-}}\hlstd{essential}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+\item Instalar scapy:
+ 
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}\\
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ easy\textunderscore install\ scapy}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+
+Si esto falla, instala scapy con apt-get (minimo la versión 2):
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}\\
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{scapy}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+
+\item Instalar sqlAlchemy (ORM para la base de datos):
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ easy\textunderscore install\ sqlalchemy}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+\item Instalar dpkt (Armado y manipulación de paquetes para varios protocolos), para ello, extraerlo, pararse en el directorio y ejecutar:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ python\ setup.py\ }\hlkwc{install}\hlstd{}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+\item En la versión de scapy que bajamos nosotros hay un bug que impide cargar correctamente un archivo pcap. Nosotros hicimos un bugfix de eso, y se encuentra en la carpeta bugfix del CD. Para utilizarlo hay que reemplazar el archivo \verb_/var/lib/python-support/python2.6/sccapy/utils.py_ por el que brindamos nosotros.
+
+\end{enumerate}
+
+\section{Uso del sniffer}
+Antes de empezar a sniffear hay que crear la base de datos para que el sniffer pueda guardar los paquetes. Para eso basta con ejecutar:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}
+\hlstd{}\hlsym{$>$\ }\hlstd{python\ persistencia.py}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+Una vez hecho esto, ya se puede correr el sniffer con:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ python\ sniff.py}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+Las opciones que soporta el sniffer son:
+\begin{itemize}
+\item -p nroPuerto (--port nroPuerto): Setea el puerto del proxy al valor nroPuerto. Por defecto es 8080
+\item -i IP (--ip IP): Setea la ip del proxy al valor IP. Por defecto se ignora la ip, y se asume que todo trafico al puerto del proxy, va para el proxy.
+\item -d file (--dump file): Guardar la sesión de sniffeo en un archivo pcap de nombre file.
+\item -v (--verbose): Modo verbose, se muestra un resumen de cada paquete (a nivel tcp) que captura el sniffer.
+\item -f file (--from-file file): Realizar la sesión simulando que se sniffean los paquetes que estan en el archivo pcap file
+\item -h (--help): Mostrar ayuda, con las posibles opciones que tiene el sniffer
+\end{itemize}
+
+Una vez lanzado el sniffer continua corriendo, hasta que se lo interrumpa con \textit{ctrl+c}

@@ -12,7 +12,7 @@ Para la construcción del sniffer utilizamos la librería Scapy. Esta es una libre
 
 Scapy provee una forma de sniffear tráfico en una interfaz de red. Utilizando esto construimos nuestro sniffer, el cual es capaz de recibir callbacks que se invocan cada vez que se recibe un nuevo paquete. Esta funcionalidad nos permite construir alrededor del sniffer no solo la funcionalidad de capturar y guardar el tráfico http, sino que permite ademas construir otras funcionalidades que se consideren útiles. En nuestro caso utilizamos esta posibilidad de los callbacks para realizar dumps a archivos pcap o para ir mostrando por pantalla los paquetes que se iban capturando.
 
-Otra caracteristica positiva de construir al sniffer de esta manera, es que permite separar el proceso de sniffear del proceso de construir los paquetes HTTP y demás, para guardarlos en la base de datos.
+Otra característica positiva de construir al sniffer de esta manera, es que permite separar el proceso de sniffear del proceso de construir los paquetes HTTP y demás, para guardarlos en la base de datos.
 
 El siguiente es un esquema que ilustra la estructura del sniffer:
 
@@ -26,17 +26,17 @@ En el esquema vemos que utilizando las capacidades de scapy para hacer sniff log
 \section{Mensajes HTTP}
 Cuando se detecta un paquete que llega al puerto del proxy, el mismo pasa a ser examinado. Del paquete se extrae el contenido (o capa RAW), si no hay contenido RAW (por ejemplo se trata de un mensaje TCP SYN) no se procesa. Si el contenido es un mensajeHTTP el mismo se persiste. Si no, se chequea que el mensaje sea el comienzo de un mensaje HTTP y si es así se crea un estado para la cuadrupla propia de esa conexión TCP, donde se van a ir agregando el contenido de los paquetes que lleguen de esa conexión, hasta tener el mensaje HTTP completo. Es posible que el mensaje HTTP llegue partido porque TCP no se preocupa por eso sino que es responsabilidad de la aplicación saber cuando terminan sus datos, y como nosotros estamos escuchando la red, vamos a tener que ser nosotros quienes rearmen el mensaje.
 
-Entre los posibles mensajes que se pueden escuchar, hay requests cuyo metodo  es CONNECT. Estos en general se usan antes de comenzar una conexión SSH, TLS, o SSL. Entonces cuando se detecta una CONNECT, se empieza a escuchar ese tráfico para detectar si se trata de tráfico no HTTP. En caso afirmativo el tráfico de la conexión se persiste. Notar que a esta altura solo diferenciamos tráfico HTTP, de tráfico no HTTP. La discriminación entre otros protocolos de aplicación es posterior.
+Entre los posibles mensajes que se pueden escuchar, hay requests cuyo método  es CONNECT. Estos en general se usan antes de comenzar una conexión SSH, TLS, o SSL. Entonces cuando se detecta un CONNECT, se empieza a escuchar ese tráfico para detectar si se trata de tráfico no HTTP. En caso afirmativo el tráfico de la conexión se persiste. Notar que a esta altura solo diferenciamos tráfico HTTP, de tráfico no HTTP. La discriminación entre otros protocolos de aplicación es posterior.
 
 \section{Otras características de sniffer}
 Ademas de sniffear tráfico HTTP y persitirlo, la aplicación brinda otras funcionalidades, que si bien no fueron pedidas, consideramos que pueden ser útiles, entre ellas:
 
 \begin{itemize}
-\item Dumpeo de la sesión de captura a un archivo pcap. Esto es útil si se quiere analizar en otra herramienta las capturas realizadas. El arhivo generado contiene todos los paquetes capturados, no solo lo que es tráfico HTTP.
+\item Dumpeo de la sesión de captura a un archivo pcap. Esto es útil si se quiere analizar en otra herramienta las capturas realizadas. El archivo generado contiene todos los paquetes capturados, no solo lo que es tráfico HTTP.
 \item Simulación de una sesión de captura a partir de un archivo pcap. El sniffer puede simular una captura en vivo mediante un archivo pcap. Esto es útil si se realizan capturas con otro sniffer como el wireshark, y se desea poder analizar a la misma con la herramienta de reportes que presentaremos mas adelante y que corresponde a la segunda parte del trabajo. Para leer archivos pcaps, también utilizamos scapy, que nos permite dado un archivo pcap obtener la lista de paquetes que hay en el, sin embargo scapy no preserva las fechas de captura de los paquetes, por lo cual la sesión queda guardada en la base de datos, como si se hubiera capturado en vivo en el momento en el que se corrió nuestro sniffer.
 \end{itemize}
 
-Ademas, dado que se utiliza un diseño basado en callbacks, es facil extender las funcionalidades del sniffer, simplemente definiendo una clase y suscribiendo un método de la misma que realice las manipulaciones deseada al paquete.
+Ademas, dado que se utiliza un diseño basado en callbacks, es fácil extender las funcionalidades del sniffer, simplemente definiendo una clase y suscribiendo un método de la misma que realice las manipulaciones deseada al paquete.
 
 %TODO: tal vez un ejemplo de esto?
 

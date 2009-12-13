@@ -11,25 +11,25 @@ Nosotros construimos una herramienta que denominamos reporTool. La misma permite
 \caption{Captura de pantalla de reporTool}
 \end{figure}
 
-En las siguientes secciones daremos una breve descripción de los reportes por nosotros realizados. Posteriormente explicaremos el modo interactivo que presenta la herramienta y finalmente mostraremos como es posible agregar reportes propios para ser corridos con reporTool.
+En las siguientes secciones daremos una breve descripción de los reportes realizados por nosotros. Posteriormente explicaremos el modo interactivo que presenta la herramienta y finalmente mostraremos como es posible agregar reportes propios para ser corridos con reporTool.
 
 \section{Reportes}
 Los siguientes son los reportes incluidos con reporTool
 
 \subsection{Reporte de horario laboral}
-Este reporte permite analizar el tráfico discriminandolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de hora o solo mostrar el porcentaje en infracción.
+Este reporte permite analizar el tráfico discriminandolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron Internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de hora o solo mostrar el porcentaje en infracción.
 
-Ademas puede mostrar la distribución del uso de internet a lo largo de las distintas horas del día.
+Ademas puede mostrar la distribución del uso de Internet a lo largo de las distintas horas del día.
 
-\subsection{Reporte por blacklists}
-Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en verdad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas blacklists, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
+\subsection{Reporte por listas negras (blacklists)}
+Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en realidad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas listas negras, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
 
-Si bien reporTool trae unos archivos de blacklists para ciertas categorías, es fácil modificar esas blacklist, o reemplazarlas por otras, crear un reporte nuevo que trabaje con blacklists de otras categorías.
+Si bien reporTool trae unas listas negras para ciertas categorías, es fácil modificar esas listas, o reemplazarlas por otras, crear un reporte nuevo que trabaje con listas de otras categorías.
 
-Estas son las blacklists incluídas con reporTool:
+Estas son las listas negras incluidas con reporTool:
 %TODO: listar las blackslists que se incluyen en la entrega
 
-Los siguientes son sitios donde es posible descargar blacklists de distintas categorías:
+Los siguientes son sitios donde es posible descargar listas negras de distintas categorías:
 \begin{itemize}
 \item \verb_http://squidguard.mesd.k12.or.us/_
 \item \verb_http://www.shallalist.de/_
@@ -37,19 +37,31 @@ Los siguientes son sitios donde es posible descargar blacklists de distintas cat
 \item \verb_http://urlblacklist.com/?sec=download_
 \end{itemize}
 
-Este reporte puede generar gráficos de cantidad de infracciones por usuarios, que porcenteja del tráfico por usuario y total esta en infracción, cuales son los sitios de la blacklist mas visitados, entre otras cosas.
+Este reporte puede generar gráficos de cantidad de infracciones por usuarios, que porcentaje del tráfico por usuario y total esta en infracción, cuales son los sitios de la lista negra mas visitados, entre otras cosas.
 
 \subsection{Reporte de tráfico AJAX}
 %TODO: sergio completa esto
 
-\subsection{Reporte por content type}
-En este reporte podemos ver el tipo de contenido del tráfico, básicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver mas en detalle que hace cada usuario.
+\subsection{Reporte por contenido (content-type)}
+En este reporte podemos ver el tipo de contenido del tráfico, básicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver más en detalle qué hace cada usuario.
 
-Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las mas interesantes para mostrar en el reporte.
+Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las más interesantes para mostrar en el reporte.
 Igualmente es factible hacer algunas de estas consultas mediante el modo interactivo (o extendiendo el reporte).
 
 \subsection{Reporte por tráfico de nivel de aplicación}
-%TODO: victoria complete esto por favor :D
+En este reporte se retoma el análisis del tráfico según protocolo de la capa de aplicación (ya al guardar los requests en la base de datos, los distinguimos entre tráfico http y no http).
+
+Aprovechando esta división, analizamos por un lado cada tipo de tráfico. Del tráfico http se analiza únicamente el volumen y los IPs involucrados (para poder hacer el reporte de tráfico discriminado por usuario, y el de tráfico total). Por otro lado, buscamos 3 protocolos distintos en el tráfico no http: SSL, TLS (el sucesor de SSL) y SSH.
+
+La forma de distinguir paquetes SSL y TLS es esencialmente la misma: se revisa el segundo y tercer byte de cada paquete, buscando una serie de números (los distintos números de versión del protocolo). Si el protocolo es SSL tendrá un cierto número de versión, si es TLS otro (hay mas de un número de versión de TLS).
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.4]{./figuras/TLS.png}
+\caption{Un paquete SSL / TLS}
+\end{figure}
+
+En cambio, para distinguir si se trata de un paquete SSH, hay que buscar el string "SSH-versiónProtocolo-versiónSoftware", que está en texto en claro. Además de este string podemos obtener el software utilizado. Uno de los reportes muestra los clientes SSH utilizados: nuestra suposición es que dada la topología de la red (habiendo que pasar a través de un proxy http) se puede hacer SSH hacia afuera de la red y no hacia adentro. Entonces, analizamos que software se utilizó mirando los request no http (y no lo responses) y obtenemos cual es el software que está permitiendo al infractor hacer SSH hacia afuera de la red.
 
 \subsection{Reporte de tráfico global}
 %TODO: sergio completa esto, o si queres lo hago yo, pero comete un paty
@@ -58,14 +70,14 @@ Igualmente es factible hacer algunas de estas consultas mediante el modo interac
 Este reporte permite elegir hasta 5 sitios y analizar la evolución de la cantidad de visitas y de tráfico mes a mes para estos sitios, a lo largo de un periodo de tiempo determinado.
 
 \subsection{Reporte por heurística}
-Este reporte puede pensarse de alguna forma como un complemento para el reporte por blacklists. El mismo utiliza un archivo donde se definen ciertas keywords (por ejemplo, keywords sobre apuestas: poker, black jack, casino, etc) que son buscadas en las requests y en los responses. El reporte muestra luego para que usuarios se encontraron matches, asi como cuales fueron los principales matches.
+Este reporte puede pensarse de alguna forma como un complemento para el reporte por blacklists. El mismo utiliza un archivo donde se definen ciertas palabras clave (por ejemplo, palabras sobre apuestas: Póker, Black Jack, casino, etc) que son buscadas en las requests y en los responses. El reporte muestra luego para que usuarios se encontraron matches, así como cuales fueron los principales matches.
 
-Las blacklists solo encuentran requests a los dominios en ellos definidos, entonces es factible que un usuario pueda visitar alguna página que no esta en la blacklist pero que debería estarlo, o que incluso saltee el chequeo de las blacklists (por ejemplo navegando con la cache de google). La búsqueda heurística permite detectar estas cosas, al costo de posiblemente dar falsos positivos sobre el contenido de las visitas. Sin embargo puede ser una herramienta útil para detectar usos indebidos.
+Las listas negras solo encuentran requests a los dominios definidos en ellos, entonces es factible que un usuario pueda visitar alguna página que no está en la lista pero que debería estarlo, o que incluso saltee el chequeo de las listas negras (por ejemplo navegando con el cache de Google). La búsqueda heurística permite detectar estas cosas, al costo de posiblemente dar falsos positivos sobre el contenido de las visitas. Sin embargo puede ser una herramienta útil para detectar usos indebidos.
 
 \section{Modo interactivo}
 Ademas de la posibilidad de realizar reportes, reporTool provee un mecanismo interactivo para realizar consultas a la base de datos. En vez de brindar una interfaz para simplemente ejecutar SQL en la base de datos, lo cual es posible con cualquier cliente de bases de datos; brindamos una consola python con ciertos elementos de alto nivel, brindados por el ORM que permiten interactuar con la base de datos.
 
-Para obtener una sesión, se debe utilizar el comando get\_session. Una vez que tenemos una sesión, podemos realizar queries sobre las clases que mapean a la base de datos (presentadas anteriormente) mediante la interfaz que provee sqlalchemy. 
+Para obtener una sesión, se debe utilizar el comando get\_session. Una vez que tenemos una sesión, podemos realizar consultas sobre las clases que mapean a la base de datos (presentadas anteriormente) mediante la interfaz que provee sqlalchemy. 
 
 Para mas información se puede consultar:
 
@@ -92,7 +104,7 @@ Type\ }\hlstr{``help''}\hlstd{}\hlsym{,\ }\hlstd{}\hlstr{``copyright''}\hlstd{}\
 
 \end{minipage}}
 
-También es posible ejecutar queries sobre la base con sintaxis sql, mediante la utilización del engine, sin embargo para utilizar SQL es conveniente usar el cliente propio del motor de la base de datos. El siguiente ejemplo permite obtener todas las requests (el resultado es un ResultProxy):
+También es posible ejecutar consultas sobre la base con sintaxis SQL, mediante la utilización del motor, sin embargo para utilizar SQL es conveniente usar el cliente propio del motor de la base de datos. El siguiente ejemplo permite obtener todas las requests (el resultado es un ResultProxy):
 
 \framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
 
@@ -155,14 +167,14 @@ Creamos un nuevo archivo llamado reporteTrucho.py, en el ponemos:
         
 \end{minipage}}
 
-Analicemos un poco el codigo:
+Analicemos un poco el código:
 La primera línea importa la clase Reporte, para que el reporte que queremos definir pueda heredar de dicha clase.
 
-Luego se importa la clase LatexFactory que brinda algunas funciones para poder generar codigo latex mas fácilmente.
+Luego se importa la clase LatexFactory que brinda algunas funciones para poder generar código latex mas fácilmente.
 
-Las línes 3 y 4 son necesarias para importar la librería traits que permite generar luego de forma automática la GUI para modificar el reporte.
+Las líneas 3 y 4 son necesarias para importar la librería traits que permite generar luego de forma automática la GUI para modificar el reporte.
 
-Luego comienza la definición de la clase. Las dos primeras lineas de la definición, establecen dos atributos que va a tener el reporte, un flag booleano que por default vale True y un rango que va del 1 al 10 y que por default comienza en 5. Estos atributos se podrán luego modificar mediante la interfaz gráfica.
+Luego comienza la definición de la clase. Las dos primeras lineas de la definición, establecen dos atributos que va a tener el reporte, un flag booleano que por defecto vale True y un rango que va del 1 al 10 y que por defecto comienza en 5. Estos atributos se podrán luego modificar mediante la interfaz gráfica.
 
 Luego se define el método ejecutar como dijimos anteriormente. En este caso se devuelve un capítulo latex con el título \textit{Reporte trucho} y un texto que muestra el valor del flag.
 

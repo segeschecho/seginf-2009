@@ -1,33 +1,56 @@
-%TODO: hablar de que se puede hacer un spoof attack
-%TODO: hablar de que solo debe ser usado por el admin
 \chapter{Generación de reportes}
 \section{ReporTool}
 La segunda parte del trabajo consistió en la realización de reportes sobre el tráfico capturado por el sniffer.
-Nosotros construimos una herramienta que denominamos reporTool. La misma permite realizar los distintos análisis de tráfico (reportes) generando una salida en formato pdf o en formato html mediante una interfaz gráfica.
+
+Para esto, hemos construido una herramienta que denominamos $ReporTool$. La misma permite realizar los distintos análisis de tráfico (y convertirlos en reportes) generando una salida en formato $pdf$ o en formato $html$ mediante una interfaz gráfica. En dicha interfaz se muestran todos los reportes que se pueden realizar, pudiendo a su vez, configurar diversos parámetros para cada uno.
+
+Como se menciono en el párrafo anterior, se utilizan los datos capturados de la base de datos. Esto puede traer un problema si $ReporTool$ es utilizado por cualquier usuario, ya que utilizando el modo interactivo, puede modificar o eliminar datos de la misma base de datos. Por esta razón es recomendable crear la base de datos con derechos de administrador para evitar este problema, o permitir utilizar sólo $ReporTool$ al administrador del equipo.
+
+Otro asunto a mencionar, tiene que ver con la veracidad de los reportes. Hay que tener en cuenta que como $ReporTool$ identifica a los usuarios de la red con su IP, esta puede haber sido victima de un IP spoofing, de esta forma es posible que un usuario resulte infractor en una o varias categorías cuando en realidad no lo fue. Por esta razón, es necesario tener en mente este posible problema al analizar la información obtenida con $ReporTool$.
 
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.4]{./figuras/Pantallazo.png}
-\caption{Captura de pantalla de reporTool}
+\caption{Captura de pantalla de ReporTool}
 \end{figure}
 
-En las siguientes secciones daremos una breve descripción de los reportes realizados por nosotros. Posteriormente explicaremos el modo interactivo que presenta la herramienta y finalmente mostraremos como es posible agregar reportes propios para ser corridos con reporTool.
+En las siguientes secciones daremos una breve descripción de los reportes que realizamos, mencionando su utilidad y funcionamiento. Posteriormente explicaremos el modo interactivo que presenta la herramienta, que como veremos nos permitirá manejarnos mas libremente sobre la información capturada en la base de datos, y finalmente mostraremos como es posible agregar reportes propios para ser corridos con $ReporTool$, ésta característica permite que la utilidad sea extensible y permita en un futuro agregar nuevos tipos de reporte.
 
 \section{Reportes}
-Los siguientes son los reportes incluidos con reporTool
+Los siguientes son los reportes incluidos con $ReporTool$, y son los que se hicieron para la entrega de este trabajo.
 
 \subsection{Reporte de horario laboral}
-Este reporte permite analizar el tráfico discriminandolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron Internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de hora o solo mostrar el porcentaje en infracción.
+Este reporte permite analizar el tráfico discriminándolo según un periodo laboral (días de la semana, y rango horario). De esta manera el reporte puede mostrar que usuarios usaron Internet fuera de dichos horarios y que porcentaje de su actividad estuvo en infracción. El reporte puede mostrar todos los pedidos que se realizaron fuera de hora o solo mostrar el porcentaje en infracción.
 
 Ademas puede mostrar la distribución del uso de Internet a lo largo de las distintas horas del día.
 
 \subsection{Reporte por listas negras (blacklists)}
-Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en realidad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas listas negras, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, etc. 
+Este reporte permite especificar en un archivo una lista negra con dominios. El reporte analiza el tráfico buscando visitas a alguno de esos dominios. Es en realidad una familia de reportes, ya que es posible utilizar varias instancias del mismo utilizando distintas listas negras, con distintos tipos de dominios, por ejemplo sitios de apuestas, de warez, redes sociales, etc. 
 
-Si bien reporTool trae unas listas negras para ciertas categorías, es fácil modificar esas listas, o reemplazarlas por otras, crear un reporte nuevo que trabaje con listas de otras categorías.
+Si bien $ReporTool$ trae un conjunto de archivos con listas negras para ciertas categorías, es fácil modificar esas listas (agregando o quitando dominios), reemplazarlas por otras, o crear un reporte nuevo que trabaje con listas de otras categorías.
 
-Estas son las listas negras incluidas con reporTool:
-%TODO: listar las blackslists que se incluyen en la entrega
+Estas son las listas negras incluidas con $ReporTool$:
+
+\begin{itemize}
+\item busquedaDeTrabajo.list
+\item chat.list
+\item citas.list
+\item controlRemoto.list
+\item downloads.list
+\item hacking.list
+\item imagehosting.list
+\item ipDinamicas.list
+\item juegosOnline.list
+\item musica.list
+\item peliculas.list
+\item proxies.list
+\item redSociales.list
+\item sexo.list
+\item spyware.list
+\item timba.list
+\item violencia.list
+\item warez.list
+\end{itemize}
 
 Los siguientes son sitios donde es posible descargar listas negras de distintas categorías:
 \begin{itemize}
@@ -40,13 +63,26 @@ Los siguientes son sitios donde es posible descargar listas negras de distintas 
 Este reporte puede generar gráficos de cantidad de infracciones por usuarios, que porcentaje del tráfico por usuario y total esta en infracción, cuales son los sitios de la lista negra mas visitados, entre otras cosas.
 
 \subsection{Reporte de tráfico AJAX}
-%TODO: sergio completa esto
+
+En este reporte se intenta informar sobre el trafico de tipo ajax que es utilizado por los usuarios. Decimos que intenta, ya que para identificar el uso de esta tecnología se realizan heuristicas. Las mismas consisten en analizar las respuestas http verificando el tipo de las mismas, para esto se mira el registro de content-type. A continuación se mostrarán los tipos de respuesta buscados para identificar trafico de este tipo:
+
+\begin{itemize}
+\item application/json
+\item application/xml
+\item text/javascript
+\item application/javascript
+\item application/x-javascript
+\end{itemize}
+
+la identificación se realiza con este método ya que no es posible identificar correctamente una petición de tipo ajax, ya que por los diferentes navegadores, difieren en la forma en que estos piden información con esta tecnología.
+
+En este reporte como se mencionó, se muestra información del uso en Bytes de esta tecnología. De esta forma entonces, el reporte de ajax incluye una sección donde se muestra la cantidad de trafico ajax con respecto al trafico no ajax. También se muestran los usuarios que mas utilizan esta tecnología, los dominios mas usados que utilizan ajax, junto con el uso por cada dominio, y por último se muestra un top de los sitios mas usados por cada usuario.
+
 
 \subsection{Reporte por contenido (content-type)}
-En este reporte podemos ver el tipo de contenido del tráfico, básicamente hicimos seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver más en detalle qué hace cada usuario.
+En este reporte podemos ver el tipo de contenido del tráfico capturado, básicamente se hicieron seis separaciones distintas (audio, video, aplicación, multipart, imagen y texto). En el reporte podemos ver, por ejemplo, la cantidad de tráfico de tipo imagen y la cantidad de tráfico que no es imagen. También tenemos la cantidad de tráfico de imagen separada por usuario para poder ver más en detalle qué hace cada usuario.
 
-Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las más interesantes para mostrar en el reporte.
-Igualmente es factible hacer algunas de estas consultas mediante el modo interactivo (o extendiendo el reporte).
+Si bien se podrían hacer varias separaciones mas (como por ejemplo discriminar por tráfico de tipo jpeg o pdf) estas separaciones generales nos parecieron las más interesantes para mostrar en el reporte.Igualmente es factible hacer algunas de estas consultas mediante el modo interactivo (o extendiendo el reporte).
 
 \subsection{Reporte por tráfico de nivel de aplicación}
 En este reporte se retoma el análisis del tráfico según protocolo de la capa de aplicación (ya al guardar los requests en la base de datos, los distinguimos entre tráfico http y no http).
@@ -64,7 +100,9 @@ La forma de distinguir paquetes SSL y TLS es esencialmente la misma: se revisa e
 En cambio, para distinguir si se trata de un paquete SSH, hay que buscar el string "SSH-versiónProtocolo-versiónSoftware", que está en texto en claro. Además de este string podemos obtener el software utilizado. Uno de los reportes muestra los clientes SSH utilizados: nuestra suposición es que dada la topología de la red (habiendo que pasar a través de un proxy http) se puede hacer SSH hacia afuera de la red y no hacia adentro. Entonces, analizamos que software se utilizó mirando los request no http (y no lo responses) y obtenemos cual es el software que está permitiendo al infractor hacer SSH hacia afuera de la red.
 
 \subsection{Reporte de tráfico global}
-%TODO: sergio completa esto, o si queres lo hago yo, pero comete un paty
+
+Este reporte tiene como finalidad mostrar los sitios mas importantes. Es decir, los sitios mas populares entre los usuarios. Cada uno se muestra con su correspondiente tráfico en bytes. Este reporte puede ser útil para observar la tendencia de uso de los clientes.
+
 
 \subsection{Reporte de seguimiento}
 Este reporte permite elegir hasta 5 sitios y analizar la evolución de la cantidad de visitas y de tráfico mes a mes para estos sitios, a lo largo de un periodo de tiempo determinado.
@@ -75,7 +113,7 @@ Este reporte puede pensarse de alguna forma como un complemento para el reporte 
 Las listas negras solo encuentran requests a los dominios definidos en ellos, entonces es factible que un usuario pueda visitar alguna página que no está en la lista pero que debería estarlo, o que incluso saltee el chequeo de las listas negras (por ejemplo navegando con el cache de Google). La búsqueda heurística permite detectar estas cosas, al costo de posiblemente dar falsos positivos sobre el contenido de las visitas. Sin embargo puede ser una herramienta útil para detectar usos indebidos.
 
 \section{Modo interactivo}
-Ademas de la posibilidad de realizar reportes, reporTool provee un mecanismo interactivo para realizar consultas a la base de datos. En vez de brindar una interfaz para simplemente ejecutar SQL en la base de datos, lo cual es posible con cualquier cliente de bases de datos; brindamos una consola python con ciertos elementos de alto nivel, brindados por el ORM que permiten interactuar con la base de datos.
+Ademas de la posibilidad de realizar reportes, $ReporTool$ provee un mecanismo interactivo para realizar consultas a la base de datos. En vez de brindar una interfaz para simplemente ejecutar SQL en la base de datos, lo cual es posible con cualquier cliente de bases de datos; brindamos una consola python con ciertos elementos de alto nivel, brindados por el ORM que permiten interactuar con la base de datos.
 
 Para obtener una sesión, se debe utilizar el comando get\_session. Una vez que tenemos una sesión, podemos realizar consultas sobre las clases que mapean a la base de datos (presentadas anteriormente) mediante la interfaz que provee sqlalchemy. 
 
@@ -128,7 +166,7 @@ Para mas información puede consultarse:
 \verb<http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html<
 
 \section{Agregado de nuevos reportes}
-ReporTool fue pensado para ser fácilmente extensible, es decir que sea fácil poder agregar nuevos reportes definidos por el usuario.
+$ReporTool$ fue pensado para ser fácilmente extensible, es decir que sea fácil poder agregar nuevos reportes definidos por el usuario.
 
 Para poder definir un nuevo reporte, es necesario definir una clase que herede de Reporte. Esta misma debe implementar el método ejecutar que recibe un desde y un hasta, que son las fechas entre las cuales debe analizarse el tráfico.
 
@@ -271,7 +309,8 @@ Type\ }\hlstr{``help''}\hlstd{}\hlsym{,\ }\hlstd{}\hlstr{``copyright''}\hlstd{}\
 Con solo hacer esto, ya tenemos un nuevo reporte disponible.
 
 \section{Algunas consideraciones de seguridad sobre ReporTool}
-ReporTool es una herramienta pensada para ser usada por un usuario administrador, ya que la misma tiene acceso a la base de datos, y si la pudiera usar cualquier usuario, podría modificarla o borrarla a su antojo.
+
+$ReporTool$ es una herramienta pensada para ser usada por un usuario administrador, ya que la misma tiene acceso a la base de datos, y si la pudiera usar cualquier usuario, podría modificarla o borrarla a su antojo.
 
 Otra consideración que hay que hacer, es que al identificar a los usuarios por su IP un usuario malicioso podría inculpar a otro usuario inocente. Para esto no tendría mas que generar requests a sitios prohibidos por la blacklist spoofeando la IP de la víctima. Entonces al correr reporTool, en el reporte aparecerá que la víctima estuvo accediendo a sitios indebidos, cuando en verdad eso es falso.
 

@@ -23,14 +23,14 @@ apt-get install  python-setuptools
 #sqlalchemy (para la persistencia)
 easy_install sqlalchemy
 
-#numpy (NO SE PARA QUE SIRVE)
+#numpy usado por traits
 apt-get install python-numpy
 
-#traits(para la parte visual, ventanitas etc) --> mejor instalarlo desde synaptic
-easy_install python-traits
+#traits(para la parte visual, ventanitas etc) 
+apt-get install python-traitsbackendwx
+apt-get install python-traits
+apt-get install python-traitsgui
 
-#traits gui --> mejor instalarlo desde synaptic
-easy_install traits-gui
 
 
 

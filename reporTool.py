@@ -63,7 +63,7 @@ class Ventana(HasTraits):
     directorioSalidaDeHTML = Directory('./informe')
     ingresarComandos = Button(label='Modo interactivo')
     formato = Enum(['pdf','html','ambos'])
-    view = View(Item('desde',style='custom' ), Item('hasta',style='simple' ), 'formato',
+    view = View(Item('desde',style='simple' ), Item('hasta',style='simple' ), 'formato',
             Item('salida', editor=FileEditor(), style='text'),
             Item('directorioSalidaDeHTML', editor=DirectoryEditor(),style='text'),
             Item('scripts',editor=ListEditor(style='custom'),resizable=True,show_label=False),

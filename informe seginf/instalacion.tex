@@ -105,3 +105,30 @@ Las opciones que soporta el sniffer son:
 \end{itemize}
 
 Una vez lanzado el sniffer continua corriendo, hasta que se lo interrumpa con \textit{ctrl+c}
+
+\section{Instalación de reporTool}
+
+\section{Uso de reporTool}
+ReporTool se puede ejecutar dandole permisos de ejecución a reporTool.py y haciendo doble click en el, o sino desde una consola corriendo:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}
+\hlstd{}\hlsym{$>$\ }\hlstd{python\ reporTool.py}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
+
+Una vez abierta la interfaz grafica, la misma presenta:
+\begin{itemize}
+\item Desde: Fecha a partir de la cual se tienen en cuenta los mensajes HTTP para hacer los reportes
+\item Hasta: Fecha hasta la cual se tienen en cuenta los mensajes HTTP para hacer los reportes
+\item Formato de salida: Puede ser PDF, HTML, o ambos.
+\item Salida: Nombre del archivo PDF a generar (si se escogió PDF o ambos)
+\item Directorio salida de html: Nombre del directorio donde crear el reporte HTML (si se escogió HTML o ambos)
+\item Lista con los reportes disponibles. Cada uno puede ser seleccionado y configurado.
+\item Generar: Dispara la generación de los reportes seleccionados
+\item Modo interactivo: Abre una consola python, como se comentó anteriormente
+\end{itemize}

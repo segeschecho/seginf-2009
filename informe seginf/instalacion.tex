@@ -107,9 +107,24 @@ Las opciones que soporta el sniffer son:
 Una vez lanzado el sniffer continua corriendo, hasta que se lo interrumpa con \textit{ctrl+c}
 
 \section{Instalación de reporTool}
+Para instalar reporTool hay que instalar traits, para eso hacemos:
+
+\framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
+\noindent
+\ttfamily
+\shorthandoff{"}\\
+\hlstd{}\hlslc{\#traits}\hspace*{\fill}\\
+\hlstd{}\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{python}\hlsym{{-}}\hlstd{numpy}\hspace*{\fill}\\
+\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{python}\hlsym{{-}}\hlstd{traitsbackendwx}\hspace*{\fill}\\
+\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{python}\hlsym{{-}}\hlstd{traits}\hspace*{\fill}\\
+\hlsym{$>$\ }\hlstd{sudo\ apt}\hlsym{{-}}\hlstd{get\ }\hlkwc{install\ }\hlstd{python}\hlsym{{-}}\hlstd{traitsgui}\hspace*{\fill}\\
+\mbox{}
+\normalfont
+\shorthandon{"}
+\end{minipage}}
 
 \section{Uso de reporTool}
-ReporTool se puede ejecutar dandole permisos de ejecución a reporTool.py y haciendo doble click en el, o sino desde una consola corriendo:
+ReporTool se puede ejecutar dándole permisos de ejecución a reporTool.py y haciendo doble click en el, o sino desde una consola corriendo:
 
 \framebox{\begin{minipage}[t][1\totalheight]{1\columnwidth}%
 \noindent
@@ -121,7 +136,7 @@ ReporTool se puede ejecutar dandole permisos de ejecución a reporTool.py y hacie
 \shorthandon{"}
 \end{minipage}}
 
-Una vez abierta la interfaz grafica, la misma presenta:
+Una vez abierta la interfaz gráfica, la misma presenta:
 \begin{itemize}
 \item Desde: Fecha a partir de la cual se tienen en cuenta los mensajes HTTP para hacer los reportes
 \item Hasta: Fecha hasta la cual se tienen en cuenta los mensajes HTTP para hacer los reportes
@@ -131,4 +146,35 @@ Una vez abierta la interfaz grafica, la misma presenta:
 \item Lista con los reportes disponibles. Cada uno puede ser seleccionado y configurado.
 \item Generar: Dispara la generación de los reportes seleccionados
 \item Modo interactivo: Abre una consola python, como se comentó anteriormente
+\end{itemize}
+
+\section{Script de instalación}
+Para facilitar la instalación del tp entregamos un scrip para su instalación. Para utilizarlo alcanza con correr \textit{instalador.sh} con derechos de administrador.
+
+\section{Contenido de la entrega}
+\begin{itemize}
+\item ajax.py: Reporte sobre trafico ajax
+\item BL: Directorio donde se encuentran las blacklists
+\item blackList.py: Reporte sobre blacklists
+\item bugfix: Bugfix para poder leer pcaps con scapy
+\item CairoPlot.py: Librería para hacer gráficos
+\item contentType.py: Reporte por content-type
+\item evolucion.py: Reporte sobre la evolución del trafico para algunos sitios
+\item heuristica.py: Reporte sobre heurísticas
+\item heuristicas: Directorio donde se encuentran los archivos de heurísticas (keywords)
+\item horarioLaboral.py: Reporte sobre usos fuera de horario laboral
+\item http.sqlite: Base de datos con algunas capturas de prueba
+\item instalador.sh: Script para facilitar la instalación del trabajo
+\item latex.py: Helper con funciones para generar latex
+\item nonHTTP.py: Reporte sobre tafico no HTTP (SSL, TLS, SSH)
+\item persistencia.py: Script para generar la base de datos y declaración de los mappers a la BD
+\item plasTeX: Librería para generar HTML
+\item README.txt: Archivo con esta información
+\item reporte.py: Clase base para los reportes
+\item reporteTrucho.py: Reporte de ejemplo de como agregar nuevos reportes
+\item reporTool.py: Herramienta generadora de reportes (interfaz gráfica)
+\item sniff.py: Sniffer HTTP (y otros)
+\item templates.py: Archivo con el template para generar el .tex para compilar a pdf
+\item tex.py: Helper para usar tex desde python
+\item traficoEnGral.py: Reporte sobre trafico general
 \end{itemize}
